@@ -15,6 +15,7 @@ jobs:
           key: ${{ secrets.EC2_PRIVATE_KEY }} # EC2의 Key 파일의 내부 텍스트
           script_stop: true 
           script: |
+                ssh-keyscan github.com >> ~/.ssh/known_hosts
                 cd /home/ubuntu
                 rm -rf common-frontend
                 git clone git@github.com:eureka-comprehensive-project/common-frontend.git

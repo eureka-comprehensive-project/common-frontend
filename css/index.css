@@ -88,6 +88,7 @@ html, body {
 
 .button-row button:hover {
   cursor: pointer;
+  background-color: black
 }
 
 @font-face {

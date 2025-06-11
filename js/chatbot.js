@@ -47,7 +47,7 @@ function displayMessage(sender, message) {
 
 async function sendToServer(message) {
     try {
-        const response = await fetch("http://localhost:8082/chatbot/api/chat", {
+        const response = await fetch("https://visiblego.com/chatbot/api/chat", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ userId: currentUserId, message })

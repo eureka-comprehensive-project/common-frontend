@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>사용자별 챗봇 테스트</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="/css/chatbot.css" />
+</head>
+
+<body>
+    <div id="chat-container">
+        <h2>👤 사용자별 챗봇 테스트</h2>
+
+        <div class="login-box">
+            <label for="userId">사용자 ID:</label>
+            <input type="number" id="userId" placeholder="예: 1" />
+            <button onclick="setUserId()">로그인</button>
+        </div>
+
+        <div id="chat-section" style="display:none;">
+            <div id="chat-box"></div>
+
+            <div id="input-row">
+                <input type="text" id="messageInput" placeholder="메시지를 입력하세요" />
+                <button onclick="sendMessage()">전송</button>
+                <div class="stt-wrapper">
+                    <button id="sttButton" onclick="toggleSTT()">🎤 음성 입력</button>
+                    <div class="stt-tooltip">말로 대화하시려면 이 버튼을 눌러주세요!</div>
+                </div>
+            </div>
+
+            <div class="bottom-spacer"></div>
+        </div>
+    </div>
+
+    <script src="/js/chatbot.js"></script>
+</body>
+
+</html>

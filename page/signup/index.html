@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>회원가입</title>
+  <link rel="stylesheet" href="../../css/signup.css">
+</head>
+<body>
+  <div class="signup-container">
+    <h2 class="title">계정 만들기</h2>
+
+    <form class="signup-form">
+      <div class="form-group with-button">
+        <input type="email" placeholder="이메일 입력" required />
+        <button type="button" class="check-btn">중복체크</button>
+      </div>
+
+      <input type="password" placeholder="비밀번호 입력" required />
+      <input type="password" placeholder="비밀번호 확인" required />
+      <input type="text" placeholder="이름" required />
+      <input type="tel" placeholder="전화 번호" required />
+      <input type="date" placeholder="생년월일" required /> <!-- E2 -->
+
+      <button type="submit" class="submit-btn">가입</button> <!-- E3 -->
+
+      <p class="bottom-text">이미 계정이 있으신가요? <a href="../login/">로그인</a></p>
+    </form>
+  </div>
+  <script src="../../js/signup.js" defer></script>
+</body>
+</html>

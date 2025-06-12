@@ -1,0 +1,80 @@
+body {
+  margin: 0;
+  padding: 0;
+  font-family: sans-serif;
+  background-color: #f2f2f2;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.signup-container {
+  max-width: 400px;           /* ← 넓이 증가 */
+  width: 100%;                /* 작은 화면 대응 */
+  padding: 40px 40px;         /* 좌우 padding도 약간 늘림 */
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.title {
+  color: black;
+  /* background-color: black; */
+  padding: 10px;
+  margin-bottom: 30px;
+}
+
+.signup-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+input[type="email"],
+input[type="password"],
+input[type="text"],
+input[type="tel"],
+input[type="date"] {
+  padding: 10px;
+  border: 1px solid #999;
+  border-radius: 6px;
+  font-size: 14px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.form-group.with-button {
+  display: flex;
+  gap: 10px;
+}
+
+.check-btn {
+  white-space: nowrap;
+  padding: 10px 16px;
+  font-size: 13px;
+  background-color: #eee;
+  border: 1px solid #666;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.submit-btn {
+  padding: 10px;
+  font-size: 15px;
+  background-color: black;
+  color: white;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+}
+
+.bottom-text {
+  margin-top: 10px;
+  font-size: 13px;
+}
+
+.bottom-text a {
+  color: blue;
+  text-decoration: underline;
+}

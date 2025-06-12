@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>로그인 페이지</title>
+  <link rel="stylesheet" href="../../css/login.css" />
+</head>
+
+<body>
+  <!-- <header>
+    <img src="../../image/logo.svg" alt="로고" class="logo">
+  </header> -->
+  <div class="container">
+    <div class="welcome">다시 오신 걸 환영합니다</div>
+
+    <div class="login-box">
+      <input type="email" placeholder="사용자 이메일" />
+      <input type="password" placeholder="비밀번호" />
+
+      <div class="options">
+        <label><input type="checkbox" /> ID저장</label>
+      </div>
+
+      <button class="login-btn" id="login-btn">
+        로그인
+      </button> <!-- E1 -->
+
+      <div class="divider">계정이 없으신가요? <a href="../signup/">회원 가입</a></div> <!-- E2 + E5 -->
+
+      <div class="social-login">
+        <button class="kakao">카카오 로그인</button> <!-- E3 -->
+        <button class="github">GitHub 로그인</button> <!-- E4 -->
+        <button class="google">구글 로그인</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../../js/login.js" defer></script>
+</body>
+
+</html>

@@ -1,32 +1,91 @@
 <!DOCTYPE html>
 <html lang="ko">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>회원가입</title>
-  <link rel="stylesheet" href="../../css/signup.css">
-</head>
-<body>
-  <div class="signup-container">
-    <h2 class="title">계정 만들기</h2>
 
-    <form class="signup-form">
-      <div class="form-group with-button">
-        <input type="email" placeholder="이메일 입력" required />
-        <button type="button" class="check-btn">중복체크</button>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>요기 U+ 회원가입</title>
+  <link rel="stylesheet" href="../../css/signup.css" />
+</head>
+
+<body>
+  <!-- 헤더 - 좌측 상단 로고 -->
+  <div class="header">
+    <!-- <img src="../../image/logo.svg" alt="로고" class="logo-image"> -->
+    <!-- <h1 alt="로고" class="logo-image">요기 U+</h1> -->
+  </div>
+
+  <!-- 메인 컨테이너 -->
+  <div class="main-container">
+    <div class="signup-container">
+      <div class="welcome-text">계정 만들기</div>
+
+      <form class="signup-form">
+        <div class="form-group">
+          <div class="form-group-with-button">
+            <input type="email" class="form-input email-input" placeholder="이메일 주소" required />
+            <button type="button" class="check-btn">중복확인</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <input type="password" class="form-input password-input" placeholder="비밀번호" required />
+        </div>
+
+        <div class="form-group">
+          <input type="password" class="form-input password-confirm-input" placeholder="비밀번호 확인" required />
+        </div>
+
+        <div class="form-group">
+          <input type="text" class="form-input name-input" placeholder="이름" required />
+        </div>
+
+        <div class="form-group">
+          <input type="tel" class="form-input phone-input" placeholder="전화번호" required />
+        </div>
+
+        <div class="form-group">
+          <input type="date" class="form-input birth-input" required />
+        </div>
+
+        <button type="submit" class="signup-btn" id="signup-btn">
+          가입하기
+        </button>
+      </form>
+
+      <div class="divider">
+        이미 계정이 있으신가요? <a href="../login/" class="login-link">로그인</a>
       </div>
 
-      <input type="password" placeholder="비밀번호 입력" required />
-      <input type="password" placeholder="비밀번호 확인" required />
-      <input type="text" placeholder="이름" required />
-      <input type="tel" placeholder="전화 번호" required />
-      <input type="date" placeholder="생년월일" required /> <!-- E2 -->
+      <!-- <div class="divider-or">또는</div> -->
 
-      <button type="submit" class="submit-btn">가입</button> <!-- E3 -->
+      <!-- <div class="social-login">
+        <button class="social-btn kakao-btn"
+          onclick="location.href='https://kauth.kakao.com/oauth/authorize?client_id=6ee5fcd15f23c12b947c56177f49d8c2&redirect_uri=https://www.visiblego.com/auth/kakao&response_type=code'">
+          <img src="../../image/btn_kakao.svg" alt="카카오" class="social-icon">
+          Kakao 계정으로 계속하기
+        </button>
 
-      <p class="bottom-text">이미 계정이 있으신가요? <a href="../login/">로그인</a></p>
-    </form>
+        <button class="social-btn google-btn">
+          <img src="../../image/btn_google.svg" alt="구글" class="social-icon">
+          Google로 계속하기
+        </button>
+
+        <button class="social-btn github-btn">
+          Github 계정으로 계속하기
+        </button>
+      </div> -->
+
+      <div class="footer-links">
+        <a href="#">이용약관</a>
+        <span>|</span>
+        <a href="#">개인정보 보호 정책</a>
+      </div>
+    </div>
   </div>
-  <script src="../../js/signup.js" defer></script>
+
+  <script src="../../js/alert.js"></script>
+  <script src="../../js/signup.js"></script>
 </body>
+
 </html>

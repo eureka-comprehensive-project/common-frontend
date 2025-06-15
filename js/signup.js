@@ -11,6 +11,158 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let isEmailChecked = false;
 
+  // 이메일 인증 모달 표시
+  const showEmailVerificationModal = (email) => {
+    // 모달 HTML 생성
+    const modal = document.createElement('div');
+    modal.className = 'email-verification-modal';
+    modal.innerHTML = `
+      <div class="modal-overlay">
+        <div class="modal-content">
+          <button class="modal-close" onclick="closeModal()">×</button>
+          <div class="modal-icon">
+            📧
+          </div>
+          <h3 class="modal-title">이메일 인증이 필요합니다</h3>
+          <p class="modal-message">
+            <strong>${email}</strong>로<br>
+            인증 링크가 전송되었습니다.
+          </p>
+          <p class="modal-submessage">
+            이메일의 보안 링크를 클릭하여<br>
+            계정을 활성화한 후 로그인해주세요.
+          </p>
+        </div>
+      </div>
+    `;
+
+    // 모달 스타일 추가
+    const modalStyles = `
+      .email-verification-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .modal-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+
+      .modal-content {
+        background: white;
+        border-radius: 20px;
+        padding: 40px 30px;
+        text-align: center;
+        max-width: 400px;
+        width: 100%;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        position: relative;
+      }
+
+      .modal-close {
+        position: absolute;
+        top: 15px;
+        right: 20px;
+        background: none;
+        border: none;
+        font-size: 24px;
+        font-weight: bold;
+        cursor: pointer;
+        color: #6b7280;
+        transition: color 0.2s ease;
+        padding: 5px;
+        line-height: 1;
+      }
+
+      .modal-close:hover {
+        color: #1a1a1a;
+      }
+
+      .modal-icon {
+        font-size: 48px;
+        margin-bottom: 20px;
+      }
+
+      .modal-title {
+        font-size: 24px;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin-bottom: 20px;
+      }
+
+      .modal-message {
+        font-size: 16px;
+        color: #4b5563;
+        margin-bottom: 16px;
+        line-height: 1.5;
+      }
+
+      .modal-submessage {
+        font-size: 14px;
+        color: #6b7280;
+        margin-bottom: 20px;
+        line-height: 1.4;
+      }
+
+      @media (max-width: 480px) {
+        .modal-content {
+          padding: 30px 20px;
+        }
+        
+        .modal-title {
+          font-size: 20px;
+        }
+        
+        .modal-message {
+          font-size: 15px;
+        }
+      }
+    `;
+
+    // 스타일 추가
+    const styleSheet = document.createElement('style');
+    styleSheet.textContent = modalStyles;
+    document.head.appendChild(styleSheet);
+
+    // 모달을 body에 추가
+    document.body.appendChild(modal);
+
+    // 전역 모달 변수 설정 (닫기 함수에서 사용)
+    window.currentModal = modal;
+
+    // 오버레이 클릭시 모달 닫기
+    modal.querySelector('.modal-overlay').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) {
+        closeModal();
+      }
+    });
+  };
+
+  // 모달 닫기 함수
+  window.closeModal = () => {
+    if (window.currentModal) {
+      window.currentModal.remove();
+      window.currentModal = null;
+    }
+    // 모달 닫으면 로그인 페이지로 이동
+    window.location.href = '../login/';
+  };
+
   // 이메일 중복확인
   const handleEmailCheck = async () => {
     const email = emailInput.value.trim();
@@ -29,7 +181,6 @@ document.addEventListener('DOMContentLoaded', () => {
     checkBtn.disabled = true;
 
     try {
-      // API 호출 (실제 엔드포인트로 변경 필요)
       const response = await fetch('https://www.visiblego.com/gateway/user/email-check', {
         method: 'POST',
         headers: {
@@ -37,15 +188,26 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         body: JSON.stringify({ email }),
       });
-      const responseJson = await response.json();
-      let data =  responseJson.data;
-      if (response.ok && data == false) {
-        showSuccess('사용 가능한 이메일입니다.');
-        isEmailChecked = true;
-        checkBtn.textContent = '확인 완료';
-        emailInput.style.borderColor = '#16a34a';
+
+      if (response.ok) {
+        const responseData = await response.json();
+        console.log("response data:", responseData);
+        
+        // data가 false일 때만 사용 가능한 이메일 (중복되지 않음)
+        if (responseData.data === false) {
+          showSuccess('사용 가능한 이메일입니다.');
+          isEmailChecked = true;
+          checkBtn.textContent = '확인 완료';
+          emailInput.style.borderColor = '#16a34a';
+        } else {
+          // data가 true이면 이미 사용 중인 이메일
+          showError('이미 사용 중인 이메일입니다.');
+          isEmailChecked = false;
+          checkBtn.textContent = '중복확인';
+          emailInput.style.borderColor = '#dc2626';
+        }
       } else {
-        showError('이미 사용 중인 이메일입니다.');
+        showError('이메일 확인 중 문제가 발생했습니다.');
         isEmailChecked = false;
         checkBtn.textContent = '중복확인';
         emailInput.style.borderColor = '#dc2626';
@@ -144,9 +306,8 @@ document.addEventListener('DOMContentLoaded', () => {
         showSuccess('회원가입이 완료되었습니다!');
         signupBtn.textContent = '가입 완료';
 
-        setTimeout(() => {
-          window.location.href = '../login/';
-        }, 1500);
+        // 이메일 인증 모달 표시
+        showEmailVerificationModal(email);
       } else {
         const errorData = await response.json();
         throw new Error(errorData.message || '회원가입 실패');

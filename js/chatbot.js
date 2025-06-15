@@ -14,6 +14,16 @@ let interimMessageDiv = null;
 document.addEventListener('DOMContentLoaded', function () {
     // 토큰 검증 후 초기화 진행
     validateToken();
+
+    // 전역 클릭 이벤트로 드롭다운 닫기
+    document.addEventListener('click', function (event) {
+        const profileDropdown = document.getElementById('profileDropdown');
+        const userProfile = document.querySelector('.user-profile');
+
+        if (profileDropdown && !userProfile.contains(event.target)) {
+            profileDropdown.classList.remove('show');
+        }
+    });
 });
 
 // 토큰 검증
@@ -374,3 +384,75 @@ function handleKeyPress(event) {
 function startRecording() {
     toggleSTT();
 }
+
+// 프로필 메뉴 토글
+function toggleProfileMenu() {
+    const dropdown = document.getElementById('profileDropdown');
+    dropdown.classList.toggle('show');
+}
+
+// 마이페이지로 이동
+function goToMyPage(event) {
+    event.stopPropagation();
+    const dropdown = document.getElementById('profileDropdown');
+    dropdown.classList.remove('show');
+
+    // TODO: 실제 마이페이지 URL로 변경
+    window.location.href = '/page/mypage';
+}
+
+// 로그아웃
+function logout(event) {
+    event.stopPropagation();
+    const dropdown = document.getElementById('profileDropdown');
+    if (dropdown) {
+        dropdown.classList.remove('show');
+    }
+
+    showLogoutModal();
+}
+
+// 로그아웃 모달 표시
+function showLogoutModal() {
+    // 모달 HTML 생성
+    const modal = document.createElement('div');
+    modal.className = 'logout-modal-overlay';
+    modal.innerHTML = `
+        <div class="logout-modal">
+            <div class="modal-header">
+                <h3>로그아웃</h3>
+            </div>
+            <div class="modal-body">
+                <p>정말 로그아웃 하시겠습니까?</p>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn cancel-btn" onclick="closeLogoutModal()">취소</button>
+                <button class="modal-btn confirm-btn" onclick="confirmLogout()">로그아웃</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+}
+
+// 로그아웃 모달 닫기
+function closeLogoutModal() {
+    const modal = document.querySelector('.logout-modal-overlay');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+// 로그아웃 확인
+function confirmLogout() {
+    // sessionStorage에서 토큰 제거
+    sessionStorage.removeItem('accessToken');
+
+    // 로그인 페이지로 이동
+    window.location.href = '/page/login';
+}
+
+function movePlanPage() {
+    window.location.href = '/page/plan'
+}
+

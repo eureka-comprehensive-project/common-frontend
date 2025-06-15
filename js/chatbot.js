@@ -2,6 +2,7 @@
 let currentChatId = null;
 let chatHistory = [];
 let userId = null;
+let accessToken = null;
 
 // 음성 인식 관련 변수
 let recognition = null;
@@ -18,7 +19,7 @@ document.addEventListener('DOMContentLoaded', function () {
 // 토큰 검증
 async function validateToken() {
     try {
-        const accessToken = sessionStorage.getItem('accessToken');
+        accessToken = sessionStorage.getItem('accessToken');
 
         if (!accessToken) {
             console.log('토큰이 없습니다. 로그인 페이지로 이동합니다.');
@@ -26,7 +27,7 @@ async function validateToken() {
             return;
         }
 
-        const response = await fetch('https://visiblego.com/auth/validate', {
+        const response = await fetch('https://www.visiblego.com/auth/validate', {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${accessToken}`,
@@ -147,7 +148,7 @@ async function sendMessage() {
 
     try {
         // 실제 API 호출
-        const response = await fetch("https://visiblego.com/gateway/chatbot/api/chat", {
+        const response = await fetch("https://www.visiblego.com/gateway/chatbot/api/chat", {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${accessToken}`,

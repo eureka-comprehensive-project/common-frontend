@@ -1,17 +1,24 @@
 document.addEventListener('DOMContentLoaded', () => {
+  const loginForm = document.querySelector('.login-form');
   const loginBtn = document.getElementById('login-btn');
   const emailInput = document.querySelector('input[type="email"]');
   const passwordInput = document.querySelector('input[type="password"]');
 
-  // 로그인 함수 (버튼 클릭과 Enter 키 둘 다 여기로 연결)
-  const handleLogin = async () => {
+  // 로그인 처리 함수
+  const handleLogin = async (e) => {
+    e.preventDefault();
+
     const email = emailInput.value.trim();
     const password = passwordInput.value.trim();
 
     if (!email || !password) {
-      alert('이메일과 비밀번호를 모두 입력해주세요.');
+      showError('이메일과 비밀번호를 모두 입력해주세요.');
       return;
     }
+
+    // 로딩 상태
+    loginBtn.textContent = '로그인 중...';
+    loginBtn.disabled = true;
 
     try {
       const response = await fetch('https://www.visiblego.com/auth/login', {
@@ -26,29 +33,46 @@ document.addEventListener('DOMContentLoaded', () => {
         throw new Error('로그인 실패');
       }
 
-      const reponseJson = await response.json();
-      const accessToken = reponseJson.data.accessToken;
+      const responseJson = await response.json();
+      const accessToken = responseJson.data.accessToken;
 
       if (accessToken) {
         sessionStorage.setItem('accessToken', accessToken);
-        window.location.href = '../chatbot/';
+        showSuccess('로그인 성공!');
+        loginBtn.textContent = '로그인 완료';
+
+        setTimeout(() => {
+          window.location.href = '../chatbot/';
+        }, 1500);
       } else {
-        alert('accessToken이 없습니다.');
+        throw new Error('accessToken이 없습니다.');
       }
     } catch (error) {
       console.error('로그인 오류:', error);
-      alert('로그인 중 문제가 발생했습니다.');
+      showError('로그인 중 문제가 발생했습니다.');
+
+      // 버튼 상태 복원
+      loginBtn.textContent = '계속';
+      loginBtn.disabled = false;
     }
   };
 
-  // 버튼 클릭 시 로그인 처리
-  loginBtn.addEventListener('click', handleLogin);
+  // 폼 제출 이벤트
+  loginForm.addEventListener('submit', handleLogin);
 
-  // Enter 키 입력 시 로그인 버튼 효과
+  // 소셜 로그인 버튼들 (기존 카카오 제외)
+  const socialButtons = document.querySelectorAll('.social-btn:not(.kakao-btn)');
+  socialButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      showWarning('해당 소셜 로그인은 준비 중입니다.');
+    });
+  });
+
+  // 입력 필드 유효성 검사 (실시간)
   [emailInput, passwordInput].forEach(input => {
-    input.addEventListener('keydown', (event) => {
-      if (event.key === 'Enter') {
-        handleLogin();
+    input.addEventListener('input', () => {
+      if (input.value.trim()) {
+        input.style.borderColor = '#d1d5db';
       }
     });
   });

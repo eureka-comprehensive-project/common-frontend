@@ -1,110 +1,269 @@
-body {
-  font-family: sans-serif;
-  background-color: #f2f2f2;
+/* 기본 리셋 */
+* {
   margin: 0;
   padding: 0;
-}
-
-.container {
-  display: flex;
-  justify-content: center;   /* 수평 가운데 */
-  align-items: center;       /* 수직 가운데 */
-  height: 100vh;             /* 전체 화면 높이 기준 */
-  flex-direction: column;
-
-}
-
-.welcome {
-  /* background-color: black; */
-  font-weight: bold;
-  font-size: 25px;
-  color: black;
-  padding: 10px 20px;
-  display: inline-block;
-  margin-bottom: 15px;
-}
-
-.login-box {
-  margin-bottom: 150px;
-  background-color: white;
-  padding: 30px 20px;
-  border-radius: 8px;
-  box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
-  width: 300px;
-  
-}
-
-.login-box input[type="email"],
-.login-box input[type="password"] {
-  width: 100%;
-  padding: 10px 14px;
-  margin: 8px 0;
   box-sizing: border-box;
-  border: 1px solid #ccc;
-  border-radius: 12px;
-  /* ← 둥글게 */
-  font-weight: 300;
-  /* ← 얇게 */
-  font-size: 14px;
 }
 
-.options {
-  text-align: left;
-  margin: 10px 0;
+/* 기본 스타일 */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  background-color: #ffffff;
+  min-height: 100vh;
+  color: #1a1a1a;
+  position: relative;
 }
 
-.login-btn {
+/* 헤더 */
+.header {
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  z-index: 10;
+}
+
+.logo-image {
+  width: 32px;
+  height: 32px;
+}
+
+/* 메인 레이아웃 */
+.main-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.login-container {
   width: 100%;
-  padding: 10px;
-  background-color: black;
-  color: white;
-  border: 1px solid #ccc;
-  border-radius: 12px;
-  margin-bottom: 15px;
-  cursor: pointer;
-}
-
-.divider {
+  max-width: 400px;
   text-align: center;
-  font-size: 14px;
-  margin-bottom: 10px;
 }
 
-.divider a {
-  color: blue;
-  text-decoration: underline;
+.welcome-text {
+  font-size: 32px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 32px;
 }
 
-.social-login button {
+/* 폼 스타일 */
+.form-group {
+  margin-bottom: 16px;
+  text-align: left;
+}
+
+.form-input {
   width: 100%;
-  margin: 5px 0;
-  padding: 10px;
-  border-radius: 10px;
-  cursor: pointer;
-  border: 1px solid #ccc;
+  padding: 12px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 20px;
+  font-size: 16px;
+  transition: all 0.2s ease;
   background-color: #fff;
 }
 
-.kakao {
-  border-color: #f7e600;
-  background-color: #f7e600;
+.form-input:focus {
+  outline: none;
+  border-color: rgb(125, 125, 198);
 }
 
-.github {
-  border-color: #333;
+.form-input::placeholder {
+  color: #9ca3af;
 }
 
-.google {
-  border-color: #4285f4;
+/* 로그인 버튼 */
+.login-btn {
+  width: 100%;
+  padding: 12px 16px;
+  background-color: #1a1a1a;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin: 24px 0;
 }
 
-.header {
-  padding: 20px;
-  position: absolute;
-  top: 0;
-  left: 0;
+.login-btn:hover {
+  background-color: #2d2d2d;
 }
 
-.logo {
-  height: 50px;
+.login-btn:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+}
+
+/* 체크박스 */
+.checkbox-section {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  margin: 16px 0;
+  gap: 8px;
+}
+
+.checkbox-section input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+}
+
+.checkbox-section label {
+  font-size: 14px;
+  color: #6b7280;
+  cursor: pointer;
+}
+
+/* 구분선 */
+.divider {
+  margin: 24px 0;
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.divider-or {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 24px 0;
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.divider-or::before,
+.divider-or::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #ccc;
+}
+
+.divider-or::before {
+  margin-right: 10px;
+}
+
+.divider-or::after {
+  margin-left: 10px;
+}
+
+/* 회원가입 링크 */
+.signup-link {
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.signup-link:hover {
+  text-decoration: underline;
+}
+
+/* 소셜 로그인 */
+.social-login {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.social-btn {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 20px;
+  background-color: white;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #1a1a1a;
+}
+
+.social-btn:hover {
+  background-color: whitesmoke;
+  border: 1px solid white;
+}
+
+.social-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+/* 구글 아이콘만 크기 조정 */
+.google-btn .social-icon {
+  width: 15px;
+}
+
+/* 푸터 링크 */
+.footer-links {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  font-size: 14px;
+}
+
+.footer-links a {
+  color: #6b7280;
+  text-decoration: none;
+}
+
+.footer-links a:hover {
+  color: #1a1a1a;
+}
+
+/* 알럿 스타일 */
+/* .alert {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  z-index: 1000;
+  transform: translateX(100%);
+  opacity: 0;
+  transition: all 0.3s ease;
+}
+
+.alert.show {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.alert.error {
+  background-color: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.alert.success {
+  background-color: #f0fdf4;
+  color: #16a34a;
+  border: 1px solid #bbf7d0;
+} */
+
+/* 반응형 */
+@media (max-width: 480px) {
+  .header {
+    top: 16px;
+    left: 16px;
+  }
+
+  .main-container {
+    padding: 16px;
+  }
+
+  .welcome-text {
+    font-size: 28px;
+  }
 }

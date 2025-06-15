@@ -8,8 +8,8 @@ window.addEventListener("DOMContentLoaded", async () => {
   if (!authCode) return;
 
   try {
-    const response = await fetch("http://localhost:8081/auth/exchange-token", {
-    // const response = await fetch("https://visiblego.com/auth/exchange-token", {
+    // const response = await fetch("http://localhost:8081/auth/exchange-token", {
+    const response = await fetch("https://visiblego.com/auth/exchange-token", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"

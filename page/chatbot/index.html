@@ -1,47 +1,63 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>대화목록 이름</title>
     <link rel="stylesheet" href="../../css/chatbot.css" />
 </head>
+
 <body>
     <div class="container">
         <!-- 왼쪽 사이드바 -->
         <div class="sidebar">
             <div class="logo">로고</div>
-            
+            <!-- <div class="logo">
+                <img src="../../image/homepage_logo_black.svg" alt="로고">
+            </div> -->
+
             <div class="new-chat" onclick="createNewChat()">
-                <div class="new-chat-icon"></div>
+                <!-- <div class="new-chat-icon"></div> -->
                 <span>새 채팅</span>
             </div>
-            
-            <div class="geometry-recall">
-                <div class="geometry-icon"></div>
+
+            <div class="geometry-recall" onclick="movePlanPage()">
+                <!-- <div class="geometry-icon"></div> -->
                 <span>요금제 조회</span>
             </div>
-            
+
             <div class="chat-list" id="chatList">
                 <!-- 채팅 목록이 여기에 동적으로 추가됩니다 -->
             </div>
-            
-            <div class="user-profile">
-                <div class="profile-icon"></div>
-                <span>로그인한 사용자 이름 프로필</span>
+
+            <div class="user-profile" onclick="toggleProfileMenu()">
+                <!-- <div class="profile-icon"></div> -->
+                <span>사용자 이름</span>
+                <div class="profile-dropdown" id="profileDropdown">
+                    <div class="dropdown-item" onclick="goToMyPage(event)">
+                        <span></span>
+                        <span>마이페이지</span>
+                    </div>
+                    <div class="dropdown-item" onclick="logout(event)">
+                        <span></span>
+                        <span>로그아웃</span>
+                    </div>
+                </div>
             </div>
         </div>
 
         <!-- 메인 채팅 영역 -->
         <div class="chat-main">
             <div class="chat-header">대화목록 이름</div>
-            
+
             <div class="chat-content" id="chatContent">
                 <!-- 채팅 메시지들이 여기에 동적으로 추가됩니다 -->
             </div>
-            
+
             <div class="chat-input-container">
-                <input type="text" class="chat-input" placeholder="무엇이든 물어보세요" id="messageInput" onkeypress="handleKeyPress(event)">
+                <input type="text" class="chat-input" placeholder="무엇이든 물어보세요" id="messageInput"
+                    onkeypress="handleKeyPress(event)">
                 <button class="mic-button" onclick="startRecording()">🎤</button>
                 <button class="send-button" onclick="sendMessage()">📤</button>
             </div>
@@ -49,4 +65,5 @@
     </div>
     <script src="../../js/chatbot.js"></script>
 </body>
+
 </html>

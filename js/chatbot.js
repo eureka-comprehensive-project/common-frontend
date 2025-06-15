@@ -62,6 +62,7 @@ function redirectToLogin() {
 }
 
 // 채팅 목록 로드 (API 호출 예정)
+// 채팅 목록 로드 (API 호출 예정)
 async function loadChatList() {
     try {
         // TODO: 실제 API 호출로 대체
@@ -70,12 +71,12 @@ async function loadChatList() {
 
         // 임시 데이터
         const chatList = [
-            { id: 1, name: '대화목록 1', active: true, hasOptions: true },
-            { id: 2, name: '대화목록 2', active: false, hasOptions: false },
-            { id: 3, name: '대화목록 3', active: false, hasOptions: false },
-            { id: 4, name: '대화목록 4', active: false, hasOptions: false },
-            { id: 5, name: '대화목록 5', active: false, hasOptions: false },
-            { id: 6, name: '대화목록 6', active: false, hasOptions: false }
+            { id: 1, name: '대화목록 1', active: true },
+            { id: 2, name: '대화목록 2', active: false },
+            { id: 3, name: '대화목록 3', active: false },
+            { id: 4, name: '대화목록 4', active: false },
+            { id: 5, name: '대화목록 5', active: false },
+            { id: 6, name: '대화목록 6', active: false }
         ];
 
         renderChatList(chatList);
@@ -91,17 +92,14 @@ function renderChatList(chatList) {
 
     chatList.forEach(chat => {
         const chatItem = document.createElement('div');
-        chatItem.className = `chat-item ${chat.active ? 'active' : ''} ${chat.hasOptions ? 'has-options' : ''}`;
+        chatItem.className = `chat-item ${chat.active ? 'active' : ''}`;
         chatItem.onclick = () => selectChat(chat.id);
 
-        chatItem.innerHTML = `
-                    <span>${chat.name}</span>
-                    ${chat.hasOptions ? '<div class="chat-options">⋯</div>' : ''}
-                `;
+        chatItem.innerHTML = `<span>${chat.name}</span>`;
 
         chatListContainer.appendChild(chatItem);
     });
-}
+};
 
 // 채팅 선택
 function selectChat(chatId) {

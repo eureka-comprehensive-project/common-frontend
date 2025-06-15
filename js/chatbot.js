@@ -71,12 +71,6 @@ async function loadChatList() {
 
         // 임시 데이터
         const chatList = [
-            { id: 1, name: '대화목록 1', active: true },
-            { id: 2, name: '대화목록 2', active: false },
-            { id: 3, name: '대화목록 3', active: false },
-            { id: 4, name: '대화목록 4', active: false },
-            { id: 5, name: '대화목록 5', active: false },
-            { id: 6, name: '대화목록 6', active: false }
         ];
 
         renderChatList(chatList);
@@ -153,9 +147,10 @@ async function sendMessage() {
 
     try {
         // 실제 API 호출
-        const response = await fetch("https://visiblego.com/chatbot/api/chat", {
+        const response = await fetch("https://visiblego.com/gateway/chatbot/api/chat", {
             method: 'POST',
             headers: {
+                'Authorization': `Bearer ${accessToken}`,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({

@@ -1,13 +1,15 @@
 
 window.addEventListener("DOMContentLoaded", async () => {
+  console.log("현재 URL:", window.location.href);
   const urlParams = new URLSearchParams(window.location.search);
   const authCode = urlParams.get("authCode");
+  console.log("authCode " + authCode);
 
   if (!authCode) return;
 
   try {
-    // const response = await fetch("http://localhost:8081/auth/exchange-token", {
-    const response = await fetch("https://visiblego.com/auth/exchange-token", {
+    const response = await fetch("http://localhost:8081/auth/exchange-token", {
+    // const response = await fetch("https://visiblego.com/auth/exchange-token", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -15,6 +17,7 @@ window.addEventListener("DOMContentLoaded", async () => {
       body: JSON.stringify({ authCode })
     });
 
+    console.log("response " + response);
     if (!response.ok) {
       throw new Error("토큰 요청 실패");
     }

@@ -1,5 +1,5 @@
-// 전역 변수로 accessToken 설정
-let accessToken = sessionStorage.getItem('accessToken') || '';
+// 전역 변수 선언
+let accessToken = null;
 
 // 카테고리 ID 매핑 (하드코딩)
 const categoryMap = {
@@ -36,14 +36,6 @@ function closeProfilePopup() {
 async function goToMyPage() {
   try {
     if (accessToken) {
-      // const response = await fetch('/api/user/profile/check', {
-      //     method: 'GET',
-      //     headers: {
-      //         'Authorization': `Bearer ${accessToken}`,
-      //         'Content-Type': 'application/json'
-      //     }
-      // });
-
       closeProfilePopup();
       window.location.href = '/page/mypage';
     } else {
@@ -143,15 +135,8 @@ async function loadPricingData(category = 'all') {
     console.error('Category:', category);
     console.error('Category ID:', categoryMap[category]);
 
-    // 카테고리별 필터링 (샘플 데이터용)
-    let filteredData = sampleData;
-    if (category !== 'all') {
-      filteredData = sampleData.filter(plan =>
-        plan.planCategory && plan.planCategory.toLowerCase() === category.toLowerCase()
-      );
-    }
-
-    displayPricingCards(filteredData);
+    // 에러 발생 시 빈 배열로 표시
+    displayPricingCards([]);
   }
 }
 
@@ -160,7 +145,7 @@ async function loadBenefitsData() {
   console.log('Loading benefits data...');
 
   try {
-    const response = await fetch('https://www.visiblego.com/gateway/plan/benefit/', {
+    const response = await fetch('https://www.visiblego.com/gateway/plan/benefit', {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -263,16 +248,16 @@ function updateBenefitsInFilter() {
   console.log('혜택 필터 섹션이 업데이트되었습니다.');
 }
 
-// 요금제 카드 화면에 표시
+// 요금제 카드 화면에 표시 - 새로운 디자인
 function displayPricingCards(pricingData) {
   const pricingCardsContainer = document.querySelector('.pricing-cards');
 
   if (!pricingData || pricingData.length === 0) {
     pricingCardsContainer.innerHTML = `
-                    <div style="text-align: center; padding: 40px; color: #666;">
-                        <p>해당 조건에 맞는 요금제가 없습니다.</p>
-                    </div>
-                `;
+      <div style="text-align: center; padding: 40px; color: #666;">
+        <p>해당 조건에 맞는 요금제가 없습니다.</p>
+      </div>
+    `;
     return;
   }
 
@@ -291,85 +276,145 @@ function displayPricingCards(pricingData) {
       return `${amount}${unit}`;
     };
 
-    // 테더링 데이터 표시
-    const getTetheringDisplay = (sharedData) => {
-      if (!sharedData) return '정보없음';
-      const amount = sharedData.tetheringDataAmount;
-      const unit = sharedData.tetheringDataUnit || 'GB';
+    // 테더링+쉐어링 데이터 표시
+    const getTetheringShareDisplay = (sharedData) => {
+      if (!sharedData) return '0GB';
 
-      if (amount === 0) return '제공안함';
-      return `${amount}${unit}`;
-    };
+      const tetheringAmount = sharedData.tetheringDataAmount || 0;
+      const familyAmount = sharedData.familyDataAmount || 0;
+      const totalShared = tetheringAmount + familyAmount;
 
-    // 가족 공유 데이터 표시
-    const getFamilyDataDisplay = (sharedData) => {
-      if (!sharedData) return '정보없음';
-      const available = sharedData.familyDataAvailable;
-      const amount = sharedData.familyDataAmount;
-      const unit = sharedData.familyDataUnit || 'GB';
-
-      if (!available || amount === 0) return '제공안함';
-      return `${amount}${unit}`;
+      if (totalShared === 0) return '0GB';
+      return `${totalShared}GB`;
     };
 
     // 월 요금 포맷팅
     const getPriceDisplay = (price) => {
       if (!price && price !== 0) return '정보없음';
-      return new Intl.NumberFormat('ko-KR').format(price) + '원';
+      return new Intl.NumberFormat('ko-KR').format(price);
+    };
+
+    // 카테고리 태그 색상
+    const getCategoryTagStyle = (categoryName) => {
+      const tagStyles = {
+        '프리미엄': { bg: '#ff6b35', text: '#fff' },
+        '유스': { bg: '#4285f4', text: '#fff' },
+        '시니어': { bg: '#34a853', text: '#fff' },
+        '청소년': { bg: '#9c27b0', text: '#fff' },
+        '너겟': { bg: '#ff9800', text: '#fff' },
+        '복지': { bg: '#607d8b', text: '#fff' },
+        '다이렉트': { bg: '#795548', text: '#fff' },
+        '키즈': { bg: '#e91e63', text: '#fff' }
+      };
+
+      return tagStyles[categoryName] || { bg: '#9e9e9e', text: '#fff' };
+    };
+
+    // 특이사항 표시 (데이터 속도, 특별 혜택 등)
+    const getSpecialFeatures = (plan) => {
+      const features = [];
+
+      // 데이터 속도 제한 체크
+      if (plan.dataAllowance && plan.dataAllowance.dataAmount < 99999) {
+        features.push('다 쓰면 최대 5Mbps');
+      }
+
+      // 부가통화 체크
+      if (plan.voiceCall && plan.voiceCall.additionalCallAllowance > 0) {
+        features.push(`부가통화 ${plan.voiceCall.additionalCallAllowance}분`);
+      }
+
+      return features;
+    };
+
+    // 혜택 목록 표시
+    const getBenefitsList = (benefits) => {
+      if (!benefits || !Array.isArray(benefits) || benefits.length === 0) {
+        return [];
+      }
+
+      // 중복 제거된 혜택 목록 반환
+      const uniqueBenefits = benefits.filter((benefit, index, self) =>
+        index === self.findIndex(b => b.benefitId === benefit.benefitId)
+      );
+
+      return uniqueBenefits.map(benefit => benefit.benefitName || '혜택');
     };
 
     // 혜택 표시
-    const getBenefitDisplay = (benefits) => {
+    const getBenefitInfo = (benefits) => {
       if (!benefits || !Array.isArray(benefits) || benefits.length === 0) {
-        return { title: '기본 서비스', info: '제공', count: '기본혜택' };
+        return '혜택 없음';
       }
 
-      // 중복 제거된 혜택 개수
       const uniqueBenefits = [...new Set(benefits.map(b => b.benefitId))];
-
-      return {
-        title: `혜택 ${uniqueBenefits.length}개`,
-        info: '제공',
-        count: `${uniqueBenefits.length}개 혜택`
-      };
+      return `${uniqueBenefits.length}개 혜택`;
     };
 
-    // 부가통화 표시
-    const getVoiceCallDisplay = (voiceCall) => {
-      if (!voiceCall || !voiceCall.additionalCallAllowance) return '';
-      return `<li>부가통화: ${voiceCall.additionalCallAllowance}분</li>`;
-    };
-
-    const benefitInfo = getBenefitDisplay(plan.benefits);
+    const categoryStyle = getCategoryTagStyle(plan.categoryName);
+    const specialFeatures = getSpecialFeatures(plan);
+    const benefitsList = getBenefitsList(plan.benefits);
+    const benefitInfo = getBenefitInfo(plan.benefits);
 
     return `
-                    <div class="pricing-card">
-                        <div class="card-content">
-                            <div class="card-left">
-                                <div class="plan-title">${plan.planName || '요금제 이름'}</div>
-                                <ul class="plan-features">
-                                    <li>데이터: ${getDataDisplay(plan.dataAllowance)}</li>
-                                    <li>테더링: ${getTetheringDisplay(plan.sharedData)}</li>
-                                    <li>가족공유: ${getFamilyDataDisplay(plan.sharedData)}</li>
-                                    <li>월 요금: ${getPriceDisplay(plan.monthlyFee)}</li>
-                                    ${getVoiceCallDisplay(plan.voiceCall)}
-                                </ul>
-                            </div>
-                            <div class="card-center">
-                                <div class="sync-status">
-                                    <div class="sync-title">${plan.categoryName || '카테고리'}</div>
-                                    <div class="message-info">
-                                        ${benefitInfo.title}<br>${benefitInfo.info}
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="card-right">
-                                <div>${benefitInfo.count}</div>
-                                <button class="edit-btn" onclick="editPlan(${plan.planId || 0})">변경하기</button>
-                            </div>
-                        </div>
-                    </div>
-                `;
+      <div class="new-pricing-card">
+        <div class="card-header">
+          <div class="category-tag" style="background-color: ${categoryStyle.bg}; color: ${categoryStyle.text};">
+            ${plan.categoryName || '기본'}
+          </div>
+          <div class="benefit-info">
+            ${benefitInfo}
+          </div>
+        </div>
+        
+        <div class="card-body">
+          <div class="plan-info">
+            <h3 class="plan-name">${plan.planName || '요금제 이름'}</h3>
+            
+            <div class="data-info">
+              <div class="data-main">데이터 ${getDataDisplay(plan.dataAllowance)}</div>
+              <div class="data-sub">테더링+쉐어링 ${getTetheringShareDisplay(plan.sharedData)}</div>
+            </div>
+            
+            ${specialFeatures.length > 0 ? `
+              <div class="special-features">
+                ${specialFeatures.map(feature => `<span class="feature-tag">${feature}</span>`).join('')}
+              </div>
+            ` : ''}
+            
+            ${benefitsList.length > 0 ? `
+              <div class="benefits-list">
+                <div class="benefits-title">혜택</div>
+                <div class="benefits-items">
+                  ${benefitsList.map(benefit => `<span class="benefit-item">${benefit}</span>`).join('')}
+                </div>
+              </div>
+            ` : ''}
+          </div>
+          
+          <div class="plan-actions">
+            <div class="price-info">
+              <div class="current-price">월 ${getPriceDisplay(plan.monthlyFee)}원</div>
+            </div>
+            
+            <div class="action-buttons">
+              <button class="btn-change" onclick="editPlan(${plan.planId || 0})">변경하기</button>
+            </div>
+          </div>
+        </div>
+        
+        <div class="card-footer">
+          <div class="additional-info">
+            <span>음성통화</span>
+            <span>집/이동전화 무제한${plan.voiceCall && plan.voiceCall.additionalCallAllowance ? `(부가통화 ${plan.voiceCall.additionalCallAllowance}분)` : ''}</span>
+          </div>
+          <div class="additional-info">
+            <span>문자메시지</span>
+            <span>기본제공</span>
+          </div>
+        </div>
+      </div>
+    `;
   }).join('');
 }
 
@@ -465,19 +510,47 @@ function clearAllFilters() {
   console.log('모든 필터가 삭제되었습니다.');
 }
 
-// 태그 토글 (기존 함수 수정)
+// 태그 토글 함수 수정 - 상관없어요 독점 선택 로직 추가
 function toggleTag(tagElement) {
-  tagElement.classList.toggle('selected');
+  const section = tagElement.closest('.filter-section-popup');
+  const clickedText = tagElement.textContent.trim();
+
+  // 상관없어요를 클릭한 경우
+  if (clickedText === '상관없어요' || clickedText === '전체') {
+    // 해당 섹션의 모든 태그 선택 해제
+    const allTags = section.querySelectorAll('.filter-tag');
+    allTags.forEach(tag => {
+      tag.classList.remove('selected');
+    });
+
+    // 상관없어요만 활성화
+    tagElement.classList.add('selected');
+  }
+  // 다른 옵션을 클릭한 경우
+  else {
+    // 해당 섹션에서 상관없어요/전체가 선택되어 있으면 해제
+    const allTags = section.querySelectorAll('.filter-tag');
+    allTags.forEach(tag => {
+      const tagText = tag.textContent.trim();
+      if (tagText === '상관없어요' || tagText === '전체') {
+        tag.classList.remove('selected');
+      }
+    });
+
+    // 클릭한 태그 토글
+    tagElement.classList.toggle('selected');
+  }
+
   updateSelectedFilters();
 }
 
-// 혜택 토글 (새로운 함수 추가)
+// 혜택 토글 함수는 기존과 동일 (혜택은 상관없어요가 없으므로)
 function toggleBenefit(benefitElement) {
   benefitElement.classList.toggle('selected');
   updateSelectedFilters();
 }
 
-// 브랜드 토글 (기존 함수 수정 - 하위 호환성 유지)
+// 브랜드 토글 (하위 호환성 유지)
 function toggleBrand(brandElement) {
   brandElement.classList.toggle('selected');
   updateSelectedFilters();
@@ -498,7 +571,7 @@ async function applyFilter() {
   const allCategoriesSelected = selectedCategories.includes('상관없어요') || selectedCategories.includes('전체');
   const anyPriceSelected = selectedPriceRange.includes('상관없어요');
   const anyDataSelected = selectedDataType.includes('상관없어요');
-  const noBenefitsSelected = selectedBenefits.length === 0; // 혜택이 선택되지 않았으면 true
+  const noBenefitsSelected = false; // 혜택이 선택되지 않았으면 true
 
   // 카테고리 ID 변환 (상관없어요가 아닌 경우만)
   const categoryIds = allCategoriesSelected ? [] : selectedCategories
@@ -528,10 +601,9 @@ async function applyFilter() {
   const dataOptions = anyDataSelected ? [] : selectedDataType
     .filter(type => type !== '상관없어요')
     .map(type => {
-      if (type.includes('완전 무제한') || type.includes('무제한')) return '무제한';
-      if (type.includes('10GB 이상') || type.includes('대용량')) return '10GB 이상';
-      if (type.includes('소용량')) return '소용량';
-      if (type.includes('다쓰면 속도제한')) return '다쓰면 속도제한';
+      if (type.includes('완전 무제한') || type.includes('무제한')) return '99999';
+      if (type.includes('10GB 이상') || type.includes('대용량')) return 'large';
+      if (type.includes('소용량')) return 'small';
       return type; // 그대로 반환
     })
     .filter(type => type !== null);
@@ -611,27 +683,220 @@ function getCategoryDisplayName(categoryKey) {
   return displayNames[categoryKey] || categoryKey;
 }
 
-// 기존 필터 초기화 함수도 수정 (필터 삭제 후 전체 데이터 로드)
-function clearAllFilters() {
-  // 모든 선택된 필터 해제
-  const allSelectedTags = document.querySelectorAll('.filter-tag.selected, .brand-item.selected');
-  allSelectedTags.forEach(tag => {
-    tag.classList.remove('selected');
-  });
+// CSS 스타일 추가 함수
+function addCardStyles() {
+  if (!document.getElementById('new-card-styles')) {
+    const styleElement = document.createElement('style');
+    styleElement.id = 'new-card-styles';
+    styleElement.innerHTML = `
+.new-pricing-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  margin-bottom: 16px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
 
-  // 화면 업데이트
-  updateSelectedFilters();
+.new-pricing-card:hover {
+  box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+  transform: translateY(-2px);
+}
 
-  // 전체 요금제 다시 로드
-  loadPricingData('all');
-  console.log('모든 필터가 삭제되고 전체 데이터를 로드했습니다.');
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px 12px;
+}
+
+.category-tag {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.benefit-info {
+  font-size: 14px;
+  color: #666;
+  font-weight: 500;
+}
+
+.card-body {
+  padding: 0 20px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.plan-info {
+  flex: 1;
+}
+
+.plan-name {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+  color: #333;
+}
+
+.data-info {
+  margin-bottom: 12px;
+}
+
+.data-main {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 4px;
+}
+
+.data-sub {
+  font-size: 14px;
+  color: #666;
+}
+
+.special-features {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.feature-tag {
+  background: #e3f2fd;
+  color: #1976d2;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.plan-actions {
+  text-align: right;
+  min-width: 140px;
+}
+
+.price-info {
+  margin-bottom: 12px;
+}
+
+.original-price {
+  font-size: 12px;
+  color: #999;
+  text-decoration: line-through;
+  display: none;
+}
+
+.discount-text {
+  font-size: 11px;
+  color: #f44336;
+  margin-bottom: 4px;
+  display: none;
+}
+
+.current-price {
+  font-size: 18px;
+  font-weight: 700;
+  color: #333;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  flex-direction: column;
+}
+
+.btn-change {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: #e91e63;
+  color: white;
+}
+
+.btn-change:hover {
+  background: #c2185b;
+}
+
+.benefits-list {
+  margin-top: 12px;
+}
+
+.benefits-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 6px;
+}
+
+.benefits-items {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.benefit-item {
+  background: #f3e5f5;
+  color: #7b1fa2;
+  padding: 3px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.card-footer {
+  background: #fafafa;
+  padding: 16px 20px;
+  border-top: 1px solid #eee;
+}
+
+.additional-info {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.additional-info:last-child {
+  margin-bottom: 0;
+}
+
+.additional-info span:first-child {
+  color: #666;
+  font-weight: 500;
+}
+
+.additional-info span:last-child {
+  color: #333;
+}
+
+/* 기존 pricing-cards 컨테이너 스타일 조정 */
+.pricing-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+    `;
+    document.head.appendChild(styleElement);
+  }
 }
 
 // 초기화
 document.addEventListener('DOMContentLoaded', function () {
+  // accessToken 초기화
+  accessToken = sessionStorage.getItem('accessToken') || '';
+
   console.log('요금제 관리 페이지가 로드되었습니다.');
   console.log('Access Token:', accessToken ? '토큰 존재' : '토큰 없음');
   console.log('Category Map:', categoryMap);
+
+  // 새로운 카드 스타일 추가
+  addCardStyles();
 
   // 초기 전체 요금제 데이터 로드
   loadPricingData('all');

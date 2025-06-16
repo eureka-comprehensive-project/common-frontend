@@ -1,4 +1,3 @@
-
 // 전역 변수로 accessToken 설정
 let accessToken = sessionStorage.getItem('accessToken') || '';
 
@@ -14,6 +13,9 @@ const categoryMap = {
   'direct': 7,        // 다이렉트
   'kids': 8           // 키즈
 };
+
+// 혜택 데이터 저장 변수
+let benefitsData = [];
 
 // 챗봇 페이지로 이동
 function goToChatbot() {
@@ -101,7 +103,6 @@ function switchTab(tabElement, tabType) {
 }
 
 // 요금제 데이터 로드 함수 (API 연동)
-// 요금제 데이터 로드 함수 (API 연동)
 async function loadPricingData(category = 'all') {
   console.log('Loading pricing data for category:', category);
 
@@ -152,6 +153,114 @@ async function loadPricingData(category = 'all') {
 
     displayPricingCards(filteredData);
   }
+}
+
+// 혜택 데이터 로드 함수
+async function loadBenefitsData() {
+  console.log('Loading benefits data...');
+  
+  try {
+    const response = await fetch('https://www.visiblego.com/gateway/plan/benefit/', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`혜택 API 호출 실패: ${response.status}`);
+    }
+
+    const apiResponse = await response.json();
+    console.log('Benefits API response:', apiResponse);
+
+    if (apiResponse.statusCode === 200 && apiResponse.data) {
+      benefitsData = apiResponse.data;
+      console.log('Benefits data loaded:', benefitsData);
+      
+      // 필터 팝업의 혜택 섹션 업데이트
+      updateBenefitsInFilter();
+    } else {
+      console.error('혜택 데이터 로드 실패:', apiResponse.message);
+      throw new Error('API 응답 에러');
+    }
+
+  } catch (error) {
+    console.error('혜택 데이터 로드 중 오류 발생:', error);
+    
+    // 에러 발생 시 기본 혜택 데이터 사용
+    benefitsData = [
+      { benefitId: 1, benefitName: "넷플릭스", benefitType: "PREMIUM" },
+      { benefitId: 2, benefitName: "디즈니+", benefitType: "PREMIUM" },
+      { benefitId: 3, benefitName: "쿠팡플레이", benefitType: "PREMIUM" },
+      { benefitId: 4, benefitName: "티빙", benefitType: "PREMIUM" },
+      { benefitId: 5, benefitName: "멜론", benefitType: "MEDIA" },
+      { benefitId: 6, benefitName: "유튜브뮤직", benefitType: "MEDIA" },
+      { benefitId: 7, benefitName: "애플뮤직", benefitType: "MEDIA" },
+      { benefitId: 8, benefitName: "스포티파이", benefitType: "MEDIA" }
+    ];
+    
+    updateBenefitsInFilter();
+  }
+}
+
+// 필터 팝업의 혜택 섹션 업데이트
+function updateBenefitsInFilter() {
+  const benefitsContainer = document.querySelector('.filter-brands');
+  
+  if (!benefitsContainer) {
+    console.warn('혜택 필터 컨테이너(.filter-brands)를 찾을 수 없습니다.');
+    return;
+  }
+  
+  console.log('혜택 컨테이너 찾음:', benefitsContainer.className);
+
+  // 혜택 타입별로 그룹핑
+  const premiumBenefits = benefitsData.filter(benefit => benefit.benefitType === 'PREMIUM');
+  const mediaBenefits = benefitsData.filter(benefit => benefit.benefitType === 'MEDIA');
+
+  let benefitsHTML = '';
+
+  // 모든 혜택을 하나의 그리드로 표시 (기존 HTML 구조 유지)
+  const allBenefits = [...premiumBenefits, ...mediaBenefits];
+  
+  benefitsHTML = allBenefits.map(benefit => {
+    // 혜택별 아이콘 색상 설정 (기본값)
+    const getIconColor = (benefitName) => {
+      const colorMap = {
+        '넷플릭스': '#e50914',
+        '디즈니+': '#1f3a93', 
+        '쿠팡플레이': '#ff6b35',
+        '티빙': '#e74c3c',
+        '멜론': '#00cd3c',
+        '유튜브뮤직': '#ff0000',
+        '애플뮤직': '#000000',
+        '스포티파이': '#1ed760'
+      };
+      return colorMap[benefitName] || '#9e9e9e';
+    };
+    
+    // 혜택 이름의 첫 글자 추출
+    const getInitial = (name) => {
+      if (name === '유튜브뮤직') return 'Y';
+      if (name === '애플뮤직') return 'A';
+      if (name === '스포티파이') return 'S';
+      return name.charAt(0);
+    };
+
+    return `
+      <div class="brand-item" onclick="toggleBenefit(this)" data-benefit-id="${benefit.benefitId}">
+        <div class="brand-icon" style="background-color: ${getIconColor(benefit.benefitName)};">
+          ${getInitial(benefit.benefitName)}
+        </div>
+        <div class="brand-name">${benefit.benefitName}</div>
+      </div>
+    `;
+  }).join('');
+
+  benefitsContainer.innerHTML = benefitsHTML;
+  console.log('혜택 필터 섹션이 업데이트되었습니다.');
 }
 
 // 요금제 카드 화면에 표시
@@ -270,8 +379,19 @@ function editPlan(planId) {
 }
 
 // 필터 팝업 열기
-function openFilterPopup() {
+async function openFilterPopup() {
   document.getElementById('filterPopup').style.display = 'block';
+  
+  // 팝업이 열린 후 혜택 데이터 로드 및 업데이트
+  setTimeout(async () => {
+    // 혜택 데이터가 없으면 먼저 로드
+    if (benefitsData.length === 0) {
+      await loadBenefitsData();
+    } else {
+      // 이미 있으면 바로 업데이트
+      updateBenefitsInFilter();
+    }
+  }, 100); // 팝업이 완전히 렌더링된 후 실행
 }
 
 // 필터 팝업 닫기
@@ -303,7 +423,7 @@ function updateSelectedFilters() {
   const selectedPriceRange = Array.from(document.querySelectorAll('.filter-section-popup:nth-child(2) .filter-tag.selected')).map(tag => tag.textContent.trim());
   // 데이터 필터 수집
   const selectedDataType = Array.from(document.querySelectorAll('.filter-section-popup:nth-child(3) .filter-tag.selected')).map(tag => tag.textContent.trim());
-  // 혜택 필터 수집
+  // 혜택 필터 수집 (기존 .brand-item 대신 .brand-item 사용)
   const selectedBenefits = Array.from(document.querySelectorAll('.brand-item.selected')).map(brand => brand.querySelector('.brand-name').textContent.trim());
 
   // 필터링된 항목들 (상관없어요, 전체 제외)
@@ -351,7 +471,13 @@ function toggleTag(tagElement) {
   updateSelectedFilters();
 }
 
-// 브랜드 토글 (기존 함수 수정)
+// 혜택 토글 (새로운 함수 추가)
+function toggleBenefit(benefitElement) {
+  benefitElement.classList.toggle('selected');
+  updateSelectedFilters();
+}
+
+// 브랜드 토글 (기존 함수 수정 - 하위 호환성 유지)
 function toggleBrand(brandElement) {
   brandElement.classList.toggle('selected');
   updateSelectedFilters();
@@ -361,7 +487,11 @@ function toggleBrand(brandElement) {
 async function applyFilter() {
   const selectedPriceRange = Array.from(document.querySelectorAll('.filter-section-popup:nth-child(1) .filter-tag.selected')).map(tag => tag.textContent);
   const selectedDataType = Array.from(document.querySelectorAll('.filter-section-popup:nth-child(2) .filter-tag.selected')).map(tag => tag.textContent);
-  const selectedBenefits = Array.from(document.querySelectorAll('.brand-item.selected')).map(brand => brand.querySelector('.brand-name').textContent);
+  const selectedBenefits = Array.from(document.querySelectorAll('.brand-item.selected')).map(brand => {
+    const benefitId = brand.getAttribute('data-benefit-id');
+    const benefitName = brand.querySelector('.brand-name').textContent;
+    return { benefitId: parseInt(benefitId), benefitName };
+  });
 
   const filterData = {
     priceRange: selectedPriceRange,
@@ -415,11 +545,14 @@ async function applyFilter() {
       });
     }
 
-    // 혜택 필터링 (benefitIdList 기반)
+    // 혜택 필터링 (선택된 혜택 ID와 매칭)
     if (selectedBenefits.length > 0) {
+      const selectedBenefitIds = selectedBenefits.map(benefit => benefit.benefitId);
       filteredData = filteredData.filter(plan => {
-        // 혜택이 있는 요금제만 필터링
-        return plan.benefitIdList && plan.benefitIdList.length > 0;
+        // 요금제에 benefits 배열이 있고, 선택된 혜택 중 하나라도 포함되어 있으면 표시
+        return plan.benefits && plan.benefits.some(planBenefit => 
+          selectedBenefitIds.includes(planBenefit.benefitId)
+        );
       });
     }
 
@@ -441,4 +574,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // 초기 전체 요금제 데이터 로드
   loadPricingData('all');
+  
+  // 혜택 데이터 미리 로드 (필터 팝업 열기 전에 준비)
+  loadBenefitsData();
 });

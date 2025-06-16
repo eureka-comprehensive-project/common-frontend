@@ -14,7 +14,8 @@ window.addEventListener("DOMContentLoaded", async () => {
       headers: {
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({ authCode })
+      body: JSON.stringify({ authCode }),
+      credentials: "include", 
     });
 
     console.log("response " + response);

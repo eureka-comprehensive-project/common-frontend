@@ -444,12 +444,40 @@ function closeLogoutModal() {
 }
 
 // 로그아웃 확인
-function confirmLogout() {
-    // sessionStorage에서 토큰 제거
-    sessionStorage.removeItem('accessToken');
+async function confirmLogout() {
+    try {
+        // sessionStorage에서 토큰 가져오기
+        const accessToken = sessionStorage.getItem('accessToken');
 
-    // 로그인 페이지로 이동
-    window.location.href = '/page/login';
+        if (accessToken) {
+            // 로그아웃 API 호출
+            const response = await fetch('https://www.visiblego.com/auth/logout', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            // API 응답 확인 (선택사항)
+            if (!response.ok) {
+                console.warn('로그아웃 API 호출 실패:', response.status);
+            }
+        }
+
+        // sessionStorage에서 토큰 제거
+        sessionStorage.removeItem('accessToken');
+
+        // 로그인 페이지로 이동
+        window.location.href = '/page/login';
+
+    } catch (error) {
+        console.error('로그아웃 중 오류 발생:', error);
+
+        // 오류가 발생해도 로컬 토큰은 제거하고 로그인 페이지로 이동
+        sessionStorage.removeItem('accessToken');
+        window.location.href = '/page/login';
+    }
 }
 
 function movePlanPage() {

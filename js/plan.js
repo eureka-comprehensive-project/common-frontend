@@ -158,7 +158,7 @@ async function loadPricingData(category = 'all') {
 // 혜택 데이터 로드 함수
 async function loadBenefitsData() {
   console.log('Loading benefits data...');
-  
+
   try {
     const response = await fetch('https://www.visiblego.com/gateway/plan/benefit/', {
       method: 'GET',
@@ -178,7 +178,7 @@ async function loadBenefitsData() {
     if (apiResponse.statusCode === 200 && apiResponse.data) {
       benefitsData = apiResponse.data;
       console.log('Benefits data loaded:', benefitsData);
-      
+
       // 필터 팝업의 혜택 섹션 업데이트
       updateBenefitsInFilter();
     } else {
@@ -188,7 +188,7 @@ async function loadBenefitsData() {
 
   } catch (error) {
     console.error('혜택 데이터 로드 중 오류 발생:', error);
-    
+
     // 에러 발생 시 기본 혜택 데이터 사용
     benefitsData = [
       { benefitId: 1, benefitName: "넷플릭스", benefitType: "PREMIUM" },
@@ -200,7 +200,7 @@ async function loadBenefitsData() {
       { benefitId: 7, benefitName: "애플뮤직", benefitType: "MEDIA" },
       { benefitId: 8, benefitName: "스포티파이", benefitType: "MEDIA" }
     ];
-    
+
     updateBenefitsInFilter();
   }
 }
@@ -208,12 +208,12 @@ async function loadBenefitsData() {
 // 필터 팝업의 혜택 섹션 업데이트
 function updateBenefitsInFilter() {
   const benefitsContainer = document.querySelector('.filter-brands');
-  
+
   if (!benefitsContainer) {
     console.warn('혜택 필터 컨테이너(.filter-brands)를 찾을 수 없습니다.');
     return;
   }
-  
+
   console.log('혜택 컨테이너 찾음:', benefitsContainer.className);
 
   // 혜택 타입별로 그룹핑
@@ -224,13 +224,13 @@ function updateBenefitsInFilter() {
 
   // 모든 혜택을 하나의 그리드로 표시 (기존 HTML 구조 유지)
   const allBenefits = [...premiumBenefits, ...mediaBenefits];
-  
+
   benefitsHTML = allBenefits.map(benefit => {
     // 혜택별 아이콘 색상 설정 (기본값)
     const getIconColor = (benefitName) => {
       const colorMap = {
         '넷플릭스': '#e50914',
-        '디즈니+': '#1f3a93', 
+        '디즈니+': '#1f3a93',
         '쿠팡플레이': '#ff6b35',
         '티빙': '#e74c3c',
         '멜론': '#00cd3c',
@@ -240,7 +240,7 @@ function updateBenefitsInFilter() {
       };
       return colorMap[benefitName] || '#9e9e9e';
     };
-    
+
     // 혜택 이름의 첫 글자 추출
     const getInitial = (name) => {
       if (name === '유튜브뮤직') return 'Y';
@@ -381,7 +381,7 @@ function editPlan(planId) {
 // 필터 팝업 열기
 async function openFilterPopup() {
   document.getElementById('filterPopup').style.display = 'block';
-  
+
   // 팝업이 열린 후 혜택 데이터 로드 및 업데이트
   setTimeout(async () => {
     // 혜택 데이터가 없으면 먼저 로드
@@ -483,87 +483,148 @@ function toggleBrand(brandElement) {
   updateSelectedFilters();
 }
 
-// 필터 적용
+// 필터 적용 함수 수정 - POST API 연동
 async function applyFilter() {
-  const selectedPriceRange = Array.from(document.querySelectorAll('.filter-section-popup:nth-child(1) .filter-tag.selected')).map(tag => tag.textContent);
-  const selectedDataType = Array.from(document.querySelectorAll('.filter-section-popup:nth-child(2) .filter-tag.selected')).map(tag => tag.textContent);
+  // 필터 조건 수집
+  const selectedCategories = Array.from(document.querySelectorAll('.filter-section-popup:nth-child(1) .filter-tag.selected')).map(tag => tag.textContent.trim());
+  const selectedPriceRange = Array.from(document.querySelectorAll('.filter-section-popup:nth-child(2) .filter-tag.selected')).map(tag => tag.textContent.trim());
+  const selectedDataType = Array.from(document.querySelectorAll('.filter-section-popup:nth-child(3) .filter-tag.selected')).map(tag => tag.textContent.trim());
   const selectedBenefits = Array.from(document.querySelectorAll('.brand-item.selected')).map(brand => {
     const benefitId = brand.getAttribute('data-benefit-id');
-    const benefitName = brand.querySelector('.brand-name').textContent;
-    return { benefitId: parseInt(benefitId), benefitName };
+    return parseInt(benefitId);
   });
 
-  const filterData = {
-    priceRange: selectedPriceRange,
-    dataType: selectedDataType,
-    benefits: selectedBenefits
+  // "상관없어요" 선택 여부 체크
+  const allCategoriesSelected = selectedCategories.includes('상관없어요') || selectedCategories.includes('전체');
+  const anyPriceSelected = selectedPriceRange.includes('상관없어요');
+  const anyDataSelected = selectedDataType.includes('상관없어요');
+  const noBenefitsSelected = selectedBenefits.length === 0; // 혜택이 선택되지 않았으면 true
+
+  // 카테고리 ID 변환 (상관없어요가 아닌 경우만)
+  const categoryIds = allCategoriesSelected ? [] : selectedCategories
+    .filter(category => category !== '상관없어요' && category !== '전체')
+    .map(category => {
+      // 카테고리 이름을 categoryMap의 키로 변환
+      const categoryKey = Object.keys(categoryMap).find(key => {
+        const mappedName = getCategoryDisplayName(key);
+        return mappedName === category;
+      });
+      return categoryKey ? categoryMap[categoryKey] : null;
+    })
+    .filter(id => id !== null);
+
+  // 가격 범위 변환
+  const priceRanges = anyPriceSelected ? [] : selectedPriceRange
+    .filter(range => range !== '상관없어요')
+    .map(range => {
+      if (range.includes('~5만원대') || range.includes('5만원 이하')) return '~5';
+      if (range.includes('6~8만원대') || range.includes('6-8만원')) return '6~8';
+      if (range.includes('9만원대~') || range.includes('9만원 이상')) return '9~';
+      return null;
+    })
+    .filter(range => range !== null);
+
+  // 데이터 옵션 변환
+  const dataOptions = anyDataSelected ? [] : selectedDataType
+    .filter(type => type !== '상관없어요')
+    .map(type => {
+      if (type.includes('완전 무제한') || type.includes('무제한')) return '무제한';
+      if (type.includes('10GB 이상') || type.includes('대용량')) return '10GB 이상';
+      if (type.includes('소용량')) return '소용량';
+      if (type.includes('다쓰면 속도제한')) return '다쓰면 속도제한';
+      return type; // 그대로 반환
+    })
+    .filter(type => type !== null);
+
+  // API 요청 바디 구성 (모든 필드 필수)
+  const filterRequestBody = {
+    categoryIds: categoryIds,
+    allCategoriesSelected: allCategoriesSelected,
+    priceRanges: priceRanges,
+    anyPriceSelected: anyPriceSelected,
+    dataOptions: dataOptions,
+    anyDataSelected: anyDataSelected,
+    benefitIds: selectedBenefits,
+    noBenefitsSelected: noBenefitsSelected
   };
 
-  console.log('Filter data:', filterData);
+  console.log('Filter request body:', filterRequestBody);
 
   try {
-    // 필터 조건과 함께 요금제 데이터 다시 로드
-    const response = await fetch('https://www.visiblego.com/gateway/plan/', {
-      method: 'GET',
+    // 필터링 API 호출
+    const response = await fetch('https://www.visiblego.com/gateway/plan/filter', {
+      method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${accessToken}`,
-      }
+      },
+      body: JSON.stringify(filterRequestBody)
     });
 
     if (!response.ok) {
-      throw new Error(`API 호출 실패: ${response.status}`);
+      throw new Error(`필터 API 호출 실패: ${response.status}`);
     }
 
     const apiResponse = await response.json();
-    const allPricingData = apiResponse.data || [];
+    console.log('Filter API response:', apiResponse);
 
-    // 클라이언트 사이드에서 필터링 적용
-    let filteredData = allPricingData;
+    // API 응답 처리
+    if (apiResponse.statusCode === 200 && apiResponse.data) {
+      const filteredData = apiResponse.data;
 
-    // 요금범위 필터링
-    if (selectedPriceRange.length > 0 && !selectedPriceRange.includes('상관 없어요')) {
-      filteredData = filteredData.filter(plan => {
-        const price = plan.monthlyFee || 0;
-        return selectedPriceRange.some(range => {
-          if (range.includes('~5만원대')) return price <= 50000;
-          if (range.includes('6~8만원대')) return price >= 60000 && price <= 80000;
-          if (range.includes('9만원대~')) return price >= 90000;
-          return true;
-        });
-      });
+      // 필터링된 결과 화면에 표시
+      displayPricingCards(filteredData);
+
+      // 선택된 필터 표시 업데이트
+      updateSelectedFilters();
+
+      // 팝업 닫기
+      closeFilterPopup();
+
+      console.log(`필터 적용 완료: ${filteredData.length}개의 요금제가 조회되었습니다.`);
+
+    } else {
+      throw new Error(apiResponse.message || '필터 API 응답 오류');
     }
-
-    // 데이터 타입 필터링
-    if (selectedDataType.length > 0 && !selectedDataType.includes('상관 없어요')) {
-      filteredData = filteredData.filter(plan => {
-        return selectedDataType.some(type => {
-          if (type.includes('완전 무제한')) return plan.dataAllowance >= 99999;
-          if (type.includes('다쓰면 속도제한')) return plan.dataAllowance < 99999;
-          return true;
-        });
-      });
-    }
-
-    // 혜택 필터링 (선택된 혜택 ID와 매칭)
-    if (selectedBenefits.length > 0) {
-      const selectedBenefitIds = selectedBenefits.map(benefit => benefit.benefitId);
-      filteredData = filteredData.filter(plan => {
-        // 요금제에 benefits 배열이 있고, 선택된 혜택 중 하나라도 포함되어 있으면 표시
-        return plan.benefits && plan.benefits.some(planBenefit => 
-          selectedBenefitIds.includes(planBenefit.benefitId)
-        );
-      });
-    }
-
-    updateSelectedFilters(); // 선택된 필터 표시 업데이트
-    closeFilterPopup();
-    displayPricingCards(filteredData); // 필터링된 결과 표시
 
   } catch (error) {
-    console.error('Filter API error:', error);
-    alert('필터 적용 중 오류가 발생했습니다.');
+    console.error('필터 적용 중 오류 발생:', error);
+    alert('필터 적용 중 오류가 발생했습니다. 다시 시도해주세요.');
+
+    // 오류 발생 시 팝업은 닫지 않고 사용자가 다시 시도할 수 있도록 함
   }
+}
+
+// 카테고리 이름 표시용 헬퍼 함수 (필요시 사용)
+function getCategoryDisplayName(categoryKey) {
+  const displayNames = {
+    'all': '전체',
+    'premium': '프리미엄',
+    'youth': '유스',
+    'senior': '시니어',
+    'nugget': '너겟',
+    'teen': '청소년',
+    'welfare': '복지',
+    'direct': '다이렉트',
+    'kids': '키즈'
+  };
+  return displayNames[categoryKey] || categoryKey;
+}
+
+// 기존 필터 초기화 함수도 수정 (필터 삭제 후 전체 데이터 로드)
+function clearAllFilters() {
+  // 모든 선택된 필터 해제
+  const allSelectedTags = document.querySelectorAll('.filter-tag.selected, .brand-item.selected');
+  allSelectedTags.forEach(tag => {
+    tag.classList.remove('selected');
+  });
+
+  // 화면 업데이트
+  updateSelectedFilters();
+
+  // 전체 요금제 다시 로드
+  loadPricingData('all');
+  console.log('모든 필터가 삭제되고 전체 데이터를 로드했습니다.');
 }
 
 // 초기화
@@ -574,7 +635,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // 초기 전체 요금제 데이터 로드
   loadPricingData('all');
-  
+
   // 혜택 데이터 미리 로드 (필터 팝업 열기 전에 준비)
   loadBenefitsData();
 });

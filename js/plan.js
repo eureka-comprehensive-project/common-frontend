@@ -465,19 +465,47 @@ function clearAllFilters() {
   console.log('모든 필터가 삭제되었습니다.');
 }
 
-// 태그 토글 (기존 함수 수정)
+// 태그 토글 함수 수정 - 상관없어요 독점 선택 로직 추가
 function toggleTag(tagElement) {
-  tagElement.classList.toggle('selected');
+  const section = tagElement.closest('.filter-section-popup');
+  const clickedText = tagElement.textContent.trim();
+
+  // 상관없어요를 클릭한 경우
+  if (clickedText === '상관없어요' || clickedText === '전체') {
+    // 해당 섹션의 모든 태그 선택 해제
+    const allTags = section.querySelectorAll('.filter-tag');
+    allTags.forEach(tag => {
+      tag.classList.remove('selected');
+    });
+
+    // 상관없어요만 활성화
+    tagElement.classList.add('selected');
+  }
+  // 다른 옵션을 클릭한 경우
+  else {
+    // 해당 섹션에서 상관없어요/전체가 선택되어 있으면 해제
+    const allTags = section.querySelectorAll('.filter-tag');
+    allTags.forEach(tag => {
+      const tagText = tag.textContent.trim();
+      if (tagText === '상관없어요' || tagText === '전체') {
+        tag.classList.remove('selected');
+      }
+    });
+
+    // 클릭한 태그 토글
+    tagElement.classList.toggle('selected');
+  }
+
   updateSelectedFilters();
 }
 
-// 혜택 토글 (새로운 함수 추가)
+// 혜택 토글 함수는 기존과 동일 (혜택은 상관없어요가 없으므로)
 function toggleBenefit(benefitElement) {
   benefitElement.classList.toggle('selected');
   updateSelectedFilters();
 }
 
-// 브랜드 토글 (기존 함수 수정 - 하위 호환성 유지)
+// 브랜드 토글 (하위 호환성 유지)
 function toggleBrand(brandElement) {
   brandElement.classList.toggle('selected');
   updateSelectedFilters();
@@ -528,10 +556,10 @@ async function applyFilter() {
   const dataOptions = anyDataSelected ? [] : selectedDataType
     .filter(type => type !== '상관없어요')
     .map(type => {
-      if (type.includes('완전 무제한') || type.includes('무제한')) return '무제한';
-      if (type.includes('10GB 이상') || type.includes('대용량')) return '10GB 이상';
-      if (type.includes('소용량')) return '소용량';
-      if (type.includes('다쓰면 속도제한')) return '다쓰면 속도제한';
+      if (type.includes('완전 무제한') || type.includes('무제한')) return '99999';
+      if (type.includes('10GB 이상') || type.includes('대용량')) return 'large';
+      if (type.includes('소용량')) return 'small';
+      // if (type.includes('다쓰면 속도제한')) return '다쓰면 속도제한';
       return type; // 그대로 반환
     })
     .filter(type => type !== null);

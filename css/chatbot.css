@@ -25,6 +25,7 @@ body {
     border-right: 1px solid #ddd;
     display: flex;
     flex-direction: column;
+    overflow-y: auto;
 }
 
 .logo {
@@ -80,6 +81,9 @@ body {
 .chat-list {
     flex: 1;
     overflow-y: auto;
+    min-height: 0;
+    margin-top: 30px;
+    border-top: 1px solid #ddd
 }
 
 .chat-item {
@@ -95,8 +99,9 @@ body {
 }
 
 .chat-item.active {
-    background-color: #e6f3ff;
-    border-right: 3px solid #007acc;
+background-color: #e0e0e0; 
+    border-right: 3px solid #007acc; 
+    font-weight: bold; 
 }
 
 .user-profile {
@@ -365,7 +370,25 @@ body {
 }
 
 .logo img {
-    height: 24px; /* 원하는 높이로 조정 */
+    height: 24px;
     width: auto;
     max-width: 100%;
+}
+
+
+/* 환영 메시지 스타일 */
+.welcome-message {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    text-align: center;
+    color: #555;
+    user-select: none; /* 텍스트 선택 방지 */
+}
+
+.welcome-message h2 {
+    font-size: 26px; /* 폰트 크기를 약간 키움 */
+    font-weight: 600;
 }

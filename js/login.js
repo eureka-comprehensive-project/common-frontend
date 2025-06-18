@@ -60,14 +60,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // 폼 제출 이벤트
   loginForm.addEventListener('submit', handleLogin);
 
-  // 소셜 로그인 버튼들 (기존 카카오 제외)
-  const socialButtons = document.querySelectorAll('.social-btn:not(.kakao-btn):not(.google-btn)');
-  socialButtons.forEach(btn => {
-    btn.addEventListener('click', () => {
-      showWarning('해당 소셜 로그인은 준비 중입니다.');
-    });
-  });
-
   // 입력 필드 유효성 검사 (실시간)
   [emailInput, passwordInput].forEach(input => {
     input.addEventListener('input', () => {

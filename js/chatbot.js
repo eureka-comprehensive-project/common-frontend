@@ -14,7 +14,7 @@ const CHAT_PAGE_SIZE = 20;
 let lastChatRoomId = null;
 let isLoadingMoreChatRooms = false;
 let allChatRoomsLoaded = false;
-const CHAT_LIST_PAGE_SIZE = 20; 
+const CHAT_LIST_PAGE_SIZE = 20;
 
 // 음성 인식 관련 변수
 let recognition = null;
@@ -84,11 +84,16 @@ async function validateToken() {
         const result = await response.json();
         console.log('토큰 검증 성공:', result);
 
-        let resultData = result.data
+        let resultData = result.data;
         userId = resultData.userId;
+        const userEmail = resultData.email;
+
+        updateUserProfileDisplay(userEmail);
 
         // 토큰이 유효하면 채팅 목록 로드
         loadChatList();
+        
+        // ※※※ 변경점: 로그인 후 첫 화면은 항상 새 채팅(환영 메시지) 화면이 되도록 수정 ※※※
         displayWelcomeMessage();
 
     } catch (error) {
@@ -100,6 +105,18 @@ async function validateToken() {
 // 로그인 페이지로 리다이렉트
 function redirectToLogin() {
     window.location.href = '/page/login';
+}
+
+/**
+ * 사용자 프로필 UI를 업데이트합니다.
+ * @param {string} name - 표시할 사용자 이름 또는 이메일
+ */
+function updateUserProfileDisplay(name) {
+    // 참고: 이 ID를 가진 HTML 요소가 프로필 이름 표시 영역에 있어야 합니다.
+    const userProfileNameElement = document.getElementById('userProfileName');
+    if (userProfileNameElement && name) {
+        userProfileNameElement.textContent = name;
+    }
 }
 
 /**
@@ -143,12 +160,13 @@ async function loadChatList() {
 
         const result = await response.json();
         
-        if (result && result.data && result.data.chatRooms) {
+        if (result && result.data && result.data.chatRooms && result.data.chatRooms.length > 0) {
             const chatRooms = result.data.chatRooms;
             renderChatList(chatRooms, false); // 새로 렌더링
 
             if (chatRooms.length > 0) {
                 lastChatRoomId = chatRooms[chatRooms.length - 1].chatRoomId;
+                // 자동 선택 로직 제거됨
             }
             if (chatRooms.length < CHAT_LIST_PAGE_SIZE) {
                 allChatRoomsLoaded = true;
@@ -156,6 +174,7 @@ async function loadChatList() {
         } else {
              renderChatList([], false);
              allChatRoomsLoaded = true;
+             // 환영 메시지 호출 로직 제거 (validateToken에서 일괄 처리)
         }
     } catch (error) {
         console.error('채팅 목록 로드 중 오류 발생:', error);
@@ -245,6 +264,7 @@ function renderChatList(chatList, append = false) {
         chatItem.className = 'chat-item';
         chatItem.dataset.chatId = chat.chatRoomId;
 
+        // 현재 선택된 채팅 ID와 비교하여 'active' 클래스를 부여합니다.
         if (chat.chatRoomId === currentChatId) {
             chatItem.classList.add('active');
         }
@@ -314,10 +334,19 @@ async function loadChatContent(chatId) {
             if (result.data.length < CHAT_PAGE_SIZE) {
                 allHistoryLoaded = true;
             }
-            result.data.reverse().forEach(msg => {
-                const sender = msg.bot ? 'bot' : 'user';
-                addMessageToChat(sender, msg.content);
-            });
+                result.data.reverse().forEach(msg => {       
+
+                    if (msg.bot && (msg.isRecommended === true || msg.content.includes('고객님의 통신 성향을 바탕으로'))) {
+                        // isRecommend: true 이면 카드로 렌더링
+                        const { intro, plans } = parsePlanData(msg.content);
+                        renderPlanCards(intro, plans);
+                    } else {
+                        // 일반 메시지는 기존 방식으로 추가
+                        const sender = msg.bot ? 'bot' : 'user';
+                        addMessageToChat(sender, msg.content);
+                    }
+                });
+
             chatContent.scrollTop = chatContent.scrollHeight;
         } else {
             addMessageToChat('system', '이전 대화 내용이 없습니다.');
@@ -384,8 +413,13 @@ async function loadMoreChatContent() {
             }
 
             result.data.reverse().forEach(msg => {
-                const sender = msg.bot ? 'bot' : 'user';
-                prependMessageToChat(sender, msg.content);
+                if (msg.bot && msg.isRecommended === true) {
+                    const { intro, plans } = parsePlanData(msg.content);
+                    renderPlanCards(intro, plans, true); 
+                } else {
+                    const sender = msg.bot ? 'bot' : 'user';
+                    prependMessageToChat(sender, msg.content);
+                }
             });
 
             const newScrollHeight = chatContent.scrollHeight;
@@ -420,21 +454,39 @@ function createNewChat() {
     console.log('새 채팅을 시작합니다. 다음 메시지는 새 채팅방을 생성합니다.');
 }
 
-// chatbot.js
-
-// 환영 메시지 표시 함수 (수정)
+// 환영 메시지 표시 함수
 function displayWelcomeMessage() {
     const chatContent = document.getElementById('chatContent');
 
     chatContent.innerHTML = `
         <div class="welcome-message">
-            <h2>무엇을 도와드릴까요?</h2>
+            <div class="welcome-header">
+                <h2>안녕하세요! 요기U+ 입니다.</h2>
+                <p>무엇을 도와드릴까요?</p>
+            </div>
+            <div class="welcome-body">
+                <h3>챗봇 사용 방법</h3>
+                <ul class="capabilities-list">
+                    <li>
+                        <strong>요금제 추천</strong>
+                        <p>고객님의 통신 사용 패턴에 꼭 맞는 요금제를 찾아 추천해 드려요.</p>
+                    </li>
+                    <li>
+                        <strong>사용자 정보 확인</strong>
+                        <p>현재 사용 중인 요금제, 남은 데이터 등 나의 정보를 간편하게 확인할 수 있어요.</p>
+                    </li>
+                    <li>
+                        <strong>간단한 심심풀이</strong>
+                        <p>일상적인 대화나 궁금한 점에 대해 편하게 이야기 나눠요.</p>
+                    </li>
+                </ul>
+            </div>
+            <p class="start-prompt">아래 입력창에 궁금한 점을 입력해 보세요!</p>
         </div>
     `;
     
     updateChatHeader('새로운 대화');
 }
-
 
 // 메시지 전송
 async function sendMessage() {
@@ -496,18 +548,34 @@ async function sendMessage() {
         console.log('API 응답:', result);
 
         removeMessage(loadingMessageId);
+        
+        console.log(result);
 
-        let botMessage = '응답을 받을 수 없습니다.';
-        if (result && result.data && result.data.message) {
-            botMessage = result.data.message;
+        if (result && result.data && result.data.isRecommended === true) {
+            const botMessage = result.data.message;
+            const { intro, plans } = parsePlanData(botMessage);
+            renderPlanCards(intro, plans);
+        } else {
+            let botMessage = '응답을 받을 수 없습니다.';
+            if (result && result.data && result.data.message) {
+                botMessage = result.data.message;
+            }
+            addMessageToChat('bot', botMessage);
         }
-
-        addMessageToChat('bot', botMessage);
 
         if (isNewChat) {
             console.log("새 채팅이 생성되었으므로 목록을 새로고침합니다.");
             updateChatHeader(message);
             await loadChatList();
+            
+            // 새 채팅 생성 후, 방 목록에서 해당 방을 활성화 상태로 만듭니다.
+            document.querySelectorAll('.chat-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            const newChatItem = document.querySelector(`.chat-item[data-chat-id='${currentChatId}']`);
+            if(newChatItem) {
+                newChatItem.classList.add('active');
+            }
         }
 
     } catch (error) {
@@ -519,7 +587,6 @@ async function sendMessage() {
         }
     }
 }
-
 
 // STT로부터 메시지 입력 (전송하지 않고 입력창에만 넣기)
 function setMessageFromSTT(message) {
@@ -534,6 +601,20 @@ function setMessageFromSTT(message) {
 function addMessageToChat(sender, message) {
     const chatContent = document.getElementById('chatContent');
 
+    // "대화 내용을 불러오는 중입니다..." 또는 "이전 대화 내용이 없습니다." 같은 시스템 메시지는 welcome-message를 덮어쓰지 않도록 처리
+    if (sender === 'system') {
+        const welcomeMessage = chatContent.querySelector('.welcome-message');
+        if (welcomeMessage) {
+            welcomeMessage.remove();
+        }
+    } else {
+        // 실제 사용자나 봇의 메시지가 추가될 때 welcome-message가 있다면 제거
+        const welcomeMessage = chatContent.querySelector('.welcome-message');
+        if (welcomeMessage) {
+            chatContent.innerHTML = '';
+        }
+    }
+
     const messageElement = document.createElement('div');
     messageElement.className = `message ${sender}`;
 
@@ -544,14 +625,16 @@ function addMessageToChat(sender, message) {
     messageBubble.className = 'message-bubble';
     messageBubble.textContent = message;
 
-    const messageTime = document.createElement('div');
-    messageTime.className = 'message-time';
-    messageTime.textContent = new Date().toLocaleTimeString();
+     messageElement.appendChild(messageBubble);
 
-    messageElement.appendChild(messageBubble);
-    messageElement.appendChild(messageTime);
+    if (sender !== 'system') {
+        const messageTime = document.createElement('div');
+        messageTime.className = 'message-time';
+        messageTime.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        messageElement.appendChild(messageTime);
+    }
+
     chatContent.appendChild(messageElement);
-
     chatContent.scrollTop = chatContent.scrollHeight;
 
     return messageId;
@@ -575,6 +658,10 @@ function prependMessageToChat(sender, message) {
 // 임시 메시지 표시 (음성 인식 중)
 function displayMessage(sender, message) {
     const chatContent = document.getElementById('chatContent');
+    const welcomeMessage = chatContent.querySelector('.welcome-message');
+    if (welcomeMessage) {
+        chatContent.innerHTML = '';
+    }
 
     const messageElement = document.createElement('div');
     messageElement.className = `message ${sender} interim`;
@@ -798,4 +885,111 @@ async function confirmLogout() {
 
 function movePlanPage() {
     window.location.href = '/page/plan'
+}
+
+
+function parsePlanData(text) {
+    const plans = [];
+    // "요금제:"를 기준으로 텍스트를 나눕니다. 
+    // split 후 생길 수 있는 빈 문자열을 filter로 제거하여 안정성을 높입니다.
+    const parts = text.split("요금제:").filter(p => p.trim() !== '');
+
+    if (parts.length === 0) {
+        // 파싱할 데이터가 없는 경우
+        return { intro: text, plans: [], outro: '' };
+    }
+
+    // 첫 번째 부분은 소개 문구로 간주합니다.
+    const intro = parts.shift().trim();
+    let outro = '';
+
+    const outroMarker = '또 저랑 무엇을 하길 원하나요?';
+    
+    // parts 배열에 아직 처리할 데이터가 남아 있는지 확인합니다.
+    if (parts.length > 0) {
+        // 마지막 부분에 outro 텍스트가 포함되어 있는지 확인합니다.
+        const lastPartIndex = parts.length - 1;
+        let lastPart = parts[lastPartIndex];
+
+        if (lastPart.includes(outroMarker)) {
+            const splitLastPart = lastPart.split(outroMarker);
+            // 요금제 정보 부분만 남기고 업데이트합니다.
+            parts[lastPartIndex] = splitLastPart[0]; 
+            // outro 텍스트를 저장합니다.
+            outro = splitLastPart[1] ? splitLastPart[1].trim() : '';
+        }
+    }
+
+    parts.forEach(part => {
+        const lines = part.trim().split('\n').filter(line => line.trim() !== ''); // 빈 줄은 무시
+        if (lines.length < 1) return;
+
+        // 요금제 이름 파싱
+        const plan = { '요금제': lines.shift().replace(/-|'/g, '').trim() };
+
+        // 요금제 세부 정보 파싱
+        lines.forEach(line => {
+            const detail = line.split(':');
+            if (detail.length === 2) {
+                const key = detail[0].replace(/-|'/g, '').trim();
+                const value = detail[1].replace(/-|'/g, '').trim();
+                plan[key] = value;
+            }
+        });
+
+        // 유효한 요금제 객체만 배열에 추가
+        if (plan['요금제']) {
+            plans.push(plan);
+        }
+    });
+
+    return { intro, plans, outro };
+}
+
+
+function renderPlanCards(intro, plans, prepend = false) {
+    const chatContent = document.getElementById('chatContent');
+
+    // 카드들을 감싸는 컨테이너 생성
+    const cardsContainer = document.createElement('div');
+    cardsContainer.className = 'message bot';
+    
+    let cardsHTML = `<div class="message-bubble">`;
+
+    // 소개 문구가 있다면 추가
+    if (intro) {
+        cardsHTML += `<p class="plan-intro-text">${intro}</p>`;
+    }
+    
+    cardsHTML += `<div class="plan-cards-container">`;
+
+    // 각 요금제에 대한 카드 생성
+    plans.forEach(plan => {
+        cardsHTML += `
+            <div class="plan-card">
+                <h3>${plan['요금제']}</h3>
+                <p><strong>월정액:</strong> ${plan['월정액'] || '정보 없음'}</p>
+                <p><strong>데이터:</strong> ${plan['제공량'] || '정보 없음'}</p>
+                <p><strong>테더링:</strong> ${plan['테더링 데이터'] || '정보 없음'}</p>
+                <p><strong>음성통화:</strong> ${plan['추가 통화 허용량'] || '정보 없음'}</p>
+                <p><strong>가족결합:</strong> ${plan['가족 결합 가능'] || '정보 없음'}</p>
+            </div>
+        `;
+    });
+
+    cardsHTML += `</div></div>`; // plan-cards-container, message-bubble 닫기
+    cardsContainer.innerHTML = cardsHTML;
+    
+    if (prepend) {
+        // prepend가 true이면 앞에 추가
+        chatContent.prepend(cardsContainer);
+    } else {
+        // 아니면 뒤에 추가하고 스크롤을 맨 아래로 이동
+        const welcomeMessage = chatContent.querySelector('.welcome-message');
+        if (welcomeMessage) {
+            chatContent.innerHTML = '';
+        }
+        chatContent.appendChild(cardsContainer);
+        chatContent.scrollTop = chatContent.scrollHeight;
+    }
 }

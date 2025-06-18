@@ -250,10 +250,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const passwordConfirm = passwordConfirmInput.value;
     const name = nameInput.value.trim();
     const phone = phoneInput.value.trim();
-    const birth = birthInput.value;
+    const birthday = birthInput.value;
 
     // 유효성 검사
-    if (!email || !password || !passwordConfirm || !name || !phone || !birth) {
+    if (!email || !password || !passwordConfirm || !name || !phone || !birthday) {
       showError('모든 필드를 입력해주세요.');
       return;
     }
@@ -298,7 +298,7 @@ document.addEventListener('DOMContentLoaded', () => {
           password,
           name,
           phone: phone.replace(/\D/g, ''), // 숫자만 전송
-          birth
+          birthday
         }),
       });
 

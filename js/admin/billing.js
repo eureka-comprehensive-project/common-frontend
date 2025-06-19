@@ -184,15 +184,17 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             const categoryDisplay = plan.planCategory || "";
 
+            console.log(plan.plan);
+
             console.log(plan)
 
             let dataDisplay = "";
             if (plan.dataAllowance === 99999) {
                 dataDisplay = "무제한";
-            } else if (plan.dataAllowance >= 10 && plan.dataAllowanceUnit) {
-                dataDisplay = "대용량";
+            } else if (plan.dataAllowance >= 10 && plan.dataAllowance < 99999 && plan.dataAllowanceUnit) {
+                dataDisplay = plan.dataAllowance + " " + plan.dataAllowanceUnit;
             } else if (plan.dataAllowance < 10 && plan.dataAllowanceUnit) {
-                dataDisplay = "소용량";
+                dataDisplay = plan.dataAllowance + " " + plan.dataAllowanceUnit;
             } else {
                 dataDisplay = "정보 없음";
             }
@@ -454,7 +456,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 body: body,
             };
         } else if (hasFilters) {
-            url = `${BASE_URL}/filter`;
+            url = `${BASE_URL}/filter/list`;
             method = "POST";
 
             // 선택된 카테고리 이름(string)을 ID(number)로 변환
@@ -475,7 +477,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 anyDataSelected: filters.dataAllowance.length === 0,
 
                 benefitIds: filters.benefits.length > 0 ? filters.benefits : [],
-                noBenefitsSelected: filters.benefits.length === 0,
+                noBenefitsSelected: false,
             };
 
             body = JSON.stringify(filterRequestDto);
@@ -515,11 +517,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             console.log(">>>>>>>>>>>>>>>>>>>." + result.data)
 
             if (result.statusCode == 200) {
-                const mappedPlans = result.data.map(({ categoryName, ...rest }) => ({
-                    ...rest,
-                    planCategory: categoryName,
-                }));
-                renderPlanTable(mappedPlans);
+                renderPlanTable(result.data);
             } else {
                 alert(`데이터 불러오기 실패: ${result.message}`);
                 planTableBody.innerHTML =
@@ -1147,7 +1145,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     };
 
     window.applyFilter = function () {
-        currentFilters.category = getSelectedTagValues("category");
+        currentFilters.category = getSelectedTagValues("planCategory");
         currentFilters.monthlyFee = getSelectedTagValues("monthlyFee");
         currentFilters.dataAllowance = getSelectedTagValues("dataAllowance");
         currentFilters.benefits = getSelectedBenefitIds();

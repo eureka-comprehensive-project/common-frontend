@@ -1,0 +1,379 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Malgun Gothic', Arial, sans-serif;
+    background-color: #f8f9fa;
+    font-size: 13px;
+}
+
+.container {
+    display: flex;
+    height: 100vh;
+}
+
+/* 왼쪽 사이드바 */
+.sidebar {
+    width: 140px;
+    background-color: #2c2c2c;
+    color: white;
+    display: flex;
+    flex-direction: column;
+}
+
+.logo {
+    padding: 15px;
+    font-size: 14px;
+    font-weight: bold;
+    background-color: #000;
+    text-align: center;
+}
+
+.new-chat, .geometry-recall {
+    padding: 12px 15px;
+    cursor: pointer;
+    border-bottom: 1px solid #444;
+    font-size: 12px;
+}
+
+.new-chat:hover, .geometry-recall:hover {
+    background-color: #444;
+}
+
+.new-chat {
+    background-color: #555;
+}
+
+.chat-list {
+    flex: 1;
+}
+
+.user-profile {
+    margin-top: auto;
+    padding: 15px;
+    font-size: 11px;
+    color: #888;
+    text-align: center;
+    line-height: 1.4;
+    cursor: pointer;
+    position: relative;
+}
+
+.profile-dropdown {
+    display: none;
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    right: 0;
+    background: #333;
+    border: 1px solid #555;
+}
+
+.dropdown-item {
+    padding: 8px;
+    border-bottom: 1px solid #555;
+    font-size: 10px;
+}
+
+.dropdown-item:hover {
+    background-color: #444;
+}
+
+/* 메인 콘텐츠 */
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background-color: white;
+    overflow-x: hidden; /* 추가 */
+}
+
+/* 헤더 */
+.header {
+    background-color: #f8f9fa;
+    padding: 20px 30px;
+    border-bottom: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.user-info {
+    font-size: 13px;
+}
+
+.user-name {
+    font-weight: bold;
+    margin-bottom: 4px;
+    color: #333;
+}
+
+.user-phone {
+    color: #666;
+}
+
+.edit-btn {
+    padding: 8px 16px;
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    color: #333;
+}
+
+.edit-btn:hover {
+    background-color: #f5f5f5;
+}
+
+/* 콘텐츠 영역 */
+.content {
+    flex: 1;
+    padding: 30px;
+    display: flex;
+    gap: 40px;
+    background-color: #f8f9fa;
+}
+
+/* 메인 영역 */
+.main-area {
+    flex: 1;
+    background-color: white;
+    border-radius: 8px;
+    padding: 30px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.section-title {
+    background-color: #f8f9fa;
+    padding: 12px 16px;
+    border: 1px solid #e0e0e0;
+    font-size: 13px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+/* 사용량 차트 */
+.usage-charts {
+    display: flex;
+    gap: 60px;
+    margin-bottom: 40px;
+    justify-content: center;
+}
+
+.chart-container {
+    text-align: center;
+    flex: 1;
+    max-width: 200px;
+}
+
+.chart-label {
+    font-size: 13px;
+    margin-bottom: 15px;
+    font-weight: bold;
+    color: #333;
+}
+
+.chart {
+    width: 150px;
+    height: 150px;
+    margin: 0 auto 15px;
+    position: relative;
+    border-radius: 50%;
+    background: conic-gradient(#4285f4 0deg 308deg, #e8eaed 308deg 360deg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.chart::before {
+    content: '';
+    width: 100px;
+    height: 100px;
+    background-color: white;
+    border-radius: 50%;
+    position: absolute;
+}
+
+.chart-text {
+    position: relative;
+    z-index: 1;
+    font-size: 16px;
+    font-weight: bold;
+    line-height: 1.2;
+    color: #333;
+}
+
+.chart-empty {
+    background: #e8eaed;
+}
+
+/* 월 이용패턴 */
+.usage-pattern {
+    margin-top: 30px;
+}
+
+.pattern-tabs {
+    display: flex;
+    margin-bottom: 15px;
+}
+
+.tab {
+    padding: 10px 20px;
+    border: 1px solid #ddd;
+    background-color: white;
+    cursor: pointer;
+    font-size: 12px;
+    color: #666;
+}
+
+.tab.active {
+    background-color: #4285f4;
+    color: white;
+    border-color: #4285f4;
+}
+
+.chart-area {
+    height: 200px;
+    display: flex;
+    align-items: end;
+    padding: 20px;
+    gap: 20px;
+}
+
+
+.bar {
+    flex: 1;
+    height: 100%;         /* ✔ 반드시 높이 명시! */
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+    position: relative;
+}
+
+
+
+.bar-fill {
+    width: 100%;
+    background-color: #4285f4;
+    height: 0;                   /* 기본값 */
+    transition: height 0.4s ease;
+    border-radius: 4px 4px 0 0;
+}
+
+
+
+.bar-label {
+    font-size: 11px;
+    text-align: center;
+    margin-top: 8px;
+    color: #666;
+}
+
+
+.data-label {
+    font-size: 11px;
+    text-align: center;
+    margin-bottom: 5px;
+    color: #333;
+    font-weight: bold;
+}
+
+
+/* 청구정보 영역 */
+.billing-info {
+    width: 300px;
+    background-color: white;
+    border-radius: 8px;
+    padding: 30px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    height: fit-content;
+}
+
+.info-title {
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 15px;
+    color: #333;
+}
+
+.info-detail {
+    font-size: 12px;
+    color: #666;
+    line-height: 1.5;
+    margin-bottom: 30px;
+}
+
+.billing-amount {
+    border-top: 1px solid #e0e0e0;
+    padding-top: 20px;
+}
+
+.amount-title {
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 8px;
+    color: #333;
+}
+
+.amount-period {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 15px;
+}
+
+.amount {
+    font-size: 24px;
+    font-weight: bold;
+    color: #333;
+    text-align: right;
+    margin-bottom: 15px;
+}
+
+.amount-note {
+    font-size: 11px;
+    color: #666;
+    line-height: 1.4;
+}
+
+/* 모달창 */
+.edit-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #f2f2f2;
+    border: 2px solid #333;
+    padding: 20px;
+    width: 250px;
+    z-index: 999;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+}
+
+.edit-modal.hidden {
+    display: none;
+}
+
+.edit-box label {
+    display: block;
+    margin-top: 8px;
+    font-weight: bold;
+}
+
+.edit-box input {
+    width: 100%;
+    padding: 4px;
+    margin-bottom: 4px;
+    box-sizing: border-box;
+}
+
+.edit-btns {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+}

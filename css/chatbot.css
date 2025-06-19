@@ -25,6 +25,7 @@ body {
     border-right: 1px solid #ddd;
     display: flex;
     flex-direction: column;
+    overflow-y: auto;
 }
 
 .logo {
@@ -80,6 +81,9 @@ body {
 .chat-list {
     flex: 1;
     overflow-y: auto;
+    min-height: 0;
+    margin-top: 30px;
+    border-top: 1px solid #ddd
 }
 
 .chat-item {
@@ -95,8 +99,9 @@ body {
 }
 
 .chat-item.active {
-    background-color: #e6f3ff;
-    border-right: 3px solid #007acc;
+background-color: #e0e0e0; 
+    border-right: 3px solid #007acc; 
+    font-weight: bold; 
 }
 
 .user-profile {
@@ -365,7 +370,266 @@ body {
 }
 
 .logo img {
-    height: 24px; /* 원하는 높이로 조정 */
+    height: 24px;
     width: auto;
     max-width: 100%;
+}
+
+
+/* ================================== */
+/* 챗봇 환영 메시지 스타일 (추가)     */
+/* ================================== */
+
+.welcome-message {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    padding: 20px;
+    text-align: center;
+    color: #333; 
+}
+
+.welcome-message .welcome-header h2 {
+    font-size: 24px; /* "안녕하세요!" 부분 */
+    font-weight: 600;
+    margin: 0 0 8px 0;
+    color: #007acc;
+}
+
+.welcome-message .welcome-header p {
+    font-size: 16px; /* "무엇을 도와드릴까요?" 부분 */
+    color: #555;
+    margin-bottom: 40px; 
+}
+
+.welcome-message .welcome-body h3 {
+    font-size: 14px; /* "챗봇 사용 방법" 부분 */
+    font-weight: 600;
+    color: #444;
+    margin-bottom: 25px;
+}
+
+.welcome-message .capabilities-list {
+    list-style: none; /* 기본 리스트 점 제거 */
+    padding: 0;
+    margin: 0;
+    max-width: 600px; 
+}
+
+.welcome-message .capabilities-list li {
+    margin-bottom: 25px; 
+    position: relative; 
+    padding-left: 15px; 
+    text-align: left; 
+}
+
+/* 점(•) 모양 만들기 */
+.welcome-message .capabilities-list li::before {
+    content: '•';
+    position: absolute;
+    left: 0;
+    top: 0;
+    font-size: 18px;
+    color: #888;
+}
+
+
+.welcome-message .capabilities-list li strong {
+    display: block; /* 제목을 한 줄로 표시 */
+    font-size: 16px; /* "요금제 추천" 등 제목 */
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.welcome-message .capabilities-list li p {
+    font-size: 14px; /* 각 항목의 설명 */
+    color: #666;
+    margin: 0;
+    line-height: 1.5; /* 줄 간격 조절 */
+}
+
+.welcome-message .start-prompt {
+    margin-top: 40px; /* 위 리스트와의 간격 */
+    font-size: 14px;
+    color: #777;
+}
+
+/* 요금제 카드 UI 스타일 */
+.plan-intro-text {
+    margin-bottom: 20px;
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+.plan-cards-container {
+    display: flex;
+    flex-wrap: wrap; /* 카드가 넘치면 다음 줄로 */
+    gap: 16px; /* 카드 사이의 간격 */
+    justify-content: flex-start;
+}
+
+.plan-card {
+    background-color: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 20px;
+    width: 220px; /* 카드의 너비 */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.plan-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+.plan-card h3 {
+    font-size: 18px;
+    font-weight: bold;
+    color: #007acc; /* 포인트 컬러 */
+    margin-top: 0;
+    margin-bottom: 16px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 12px;
+}
+
+.plan-card p {
+    font-size: 14px;
+    margin: 0 0 8px 0;
+    color: #333;
+    line-height: 1.4;
+}
+
+.plan-card p strong {
+    font-weight: 600;
+    color: #555;
+    margin-right: 6px;
+}
+
+/* 추천 요금제 피드백 UI */
+.feedback-section {
+    border-top: 1px solid #e9ecef;
+    margin-top: 12px;
+    padding-top: 12px;
+}
+
+.feedback-section-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: #333;
+    padding: 0 12px;
+    margin-bottom: 10px;
+}
+
+.feedback-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px; /* 버튼 사이의 간격 */
+    padding: 0 12px 10px;
+}
+
+.feedback-buttons button {
+    flex-grow: 1; /* 버튼이 가능한 공간을 채우도록 함 */
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #495057;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    text-align: center;
+}
+
+.feedback-buttons button:hover {
+    background-color: #e9ecef;
+    border-color: #ced4da;
+}
+
+/* 긍정적인 피드백 버튼 스타일 */
+.feedback-buttons button.btn-positive {
+    background-color: #e6f3ff;
+    border-color: #74b9ff;
+    color: #0056b3;
+}
+
+.feedback-buttons button.btn-positive:hover {
+    background-color: #d0e8ff;
+}
+
+/* 비활성화된 버튼 스타일 */
+.feedback-buttons button.disabled {
+    cursor: not-allowed;
+    background-color: #f1f3f5 !important;
+    border-color: #e9ecef !important;
+    color: #adb5bd !important;
+    opacity: 0.8;
+}
+
+/* 선택된 버튼 스타일 */
+.feedback-buttons button.selected {
+    background-color: #007bff !important;
+    color: white !important;
+    border-color: #007bff !important;
+    font-weight: bold;
+}
+
+
+/* ================================== */
+/* 추천 질문 스타일 (수정)            */
+/* ================================== */
+
+.suggestion-container {
+    display: none; /* 평소에는 숨겨둠 */
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    padding: 0 10px 10px; /* 입력창과 간격 조정 */
+}
+
+.suggestion-container.show {
+    display: flex; /* 'show' 클래스가 추가되면 보이게 함 */
+}
+
+.suggestion-item {
+    padding: 8px 16px;
+    border: 1px solid #FF0084;
+    color: #FF0084;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.suggestion-item:hover {
+    background-color: #FF0084;
+    color: white;
+}
+
+/* 채팅 목록 아이템 내부 컨텐츠 레이아웃 */
+.chat-item-content {
+    display: flex;
+    justify-content: space-between; 
+    align-items: center;
+    width: 100%;
+    overflow: hidden;
+}
+
+/* 채팅 제목 스타일 (말줄임표 적용) */
+.chat-item-title {
+    white-space: nowrap; 
+    overflow: hidden; 
+    text-overflow: ellipsis; 
+    margin-right: 8px; 
+}
+
+/* 날짜 스타일 */
+.chat-item-date {
+    font-size: 12px; 
+    color: #888; 
+    flex-shrink: 0; 
 }

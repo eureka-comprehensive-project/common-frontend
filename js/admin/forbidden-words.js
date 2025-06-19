@@ -207,27 +207,33 @@ document.addEventListener('DOMContentLoaded', () => {
         return filteredWords;
     }
 
-    /**
-     * 금칙어 추가
-     * @param {string} word - 금칙어
-     * @param {boolean} isUsed - 사용 여부
-     * @returns {boolean} 성공 여부
-     */
-    async function addForbiddenWord(word, isUsed) {
-        try {
-            await window.AdminCommon.apiPost('/admin/forbidden-words', {
-                word,
-                used: isUsed
-            });
-            
-            showToast('금칙어가 성공적으로 추가되었습니다.', 'success');
-            return true;
-        } catch (error) {
-            const message = error.message || '금칙어 추가에 실패했습니다.';
-            showToast(`금칙어 추가 실패: ${message}`, 'error');
-            return false;
-        }
-    }
+/**
+     * 금칙어 추가
+     * @param {string} word - 금칙어
+     * @param {boolean} isUsed - 사용 여부
+     * @returns {boolean} 성공 여부
+     */
+    async function addForbiddenWord(word, isUsed) {
+        try {
+            await window.AdminCommon.apiPost('/admin/forbidden-words', {
+                word,
+                used: isUsed
+            });
+            
+            showToast('금칙어가 성공적으로 추가되었습니다.', 'success');
+            return true;
+        } catch (error) {
+            // 500 에러를 중복 등록으로 간주하고 특정 메시지 표시
+            if (error && error.message && error.message.includes('500')) {
+                showToast('이미 등록된 금칙어 입니다.', 'error');
+            } else {
+                // 그 외 다른 에러는 기존 방식대로 표시
+                const message = error.message || '금칙어 추가에 실패했습니다.';
+                showToast(`금칙어 추가 실패: ${message}`, 'error');
+            }
+            return false;
+        }
+    }
 
     /**
      * 금칙어 삭제

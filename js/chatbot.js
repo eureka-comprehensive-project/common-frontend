@@ -4,10 +4,7 @@ let chatHistory = [];
 let userId = null;
 let accessToken = null;
 
-// 메시지 내역 페이징 관련 변수
-let oldestMessageId = null;
-let isLoadingMoreMessages = false;
-let allHistoryLoaded = false;
+let chatRoomStates = {};
 const CHAT_PAGE_SIZE = 20;
 
 // 채팅방 목록 페이징 관련 변수
@@ -30,7 +27,8 @@ document.addEventListener('DOMContentLoaded', function () {
     // 메시지 내역 스크롤 리스너 (상단)
     const chatContent = document.getElementById('chatContent');
     chatContent.addEventListener('scroll', () => {
-        if (chatContent.scrollTop === 0 && !isLoadingMoreMessages && !allHistoryLoaded && currentChatId) {
+        const currentState = chatRoomStates[currentChatId];
+        if (chatContent.scrollTop === 0 && currentState && !currentState.isLoadingMoreMessages && !currentState.allHistoryLoaded && currentChatId) {
             loadMoreChatContent();
         }
     });
@@ -38,7 +36,6 @@ document.addEventListener('DOMContentLoaded', function () {
     // 채팅방 목록 스크롤 리스너 (하단)
     const chatListContainer = document.getElementById('chatList');
     chatListContainer.addEventListener('scroll', () => {
-        // 스크롤이 하단에 거의 닿았고, 로딩 중이 아니며, 모든 목록을 불러오지 않았을 때
         if (chatListContainer.scrollTop + chatListContainer.clientHeight >= chatListContainer.scrollHeight - 10 && !isLoadingMoreChatRooms && !allChatRoomsLoaded) {
             loadMoreChatRooms();
         }
@@ -92,8 +89,7 @@ async function validateToken() {
 
         // 토큰이 유효하면 채팅 목록 로드
         loadChatList();
-        
-        // ※※※ 변경점: 로그인 후 첫 화면은 항상 새 채팅(환영 메시지) 화면이 되도록 수정 ※※※
+
         displayWelcomeMessage();
 
     } catch (error) {
@@ -107,22 +103,13 @@ function redirectToLogin() {
     window.location.href = '/page/login';
 }
 
-/**
- * 사용자 프로필 UI를 업데이트합니다.
- * @param {string} name - 표시할 사용자 이름 또는 이메일
- */
 function updateUserProfileDisplay(name) {
-    // 참고: 이 ID를 가진 HTML 요소가 프로필 이름 표시 영역에 있어야 합니다.
     const userProfileNameElement = document.getElementById('userProfileName');
     if (userProfileNameElement && name) {
         userProfileNameElement.textContent = name;
     }
 }
 
-/**
- * 채팅 메인 헤더의 제목을 업데이트합니다.
- * @param {string} title - 표시할 새로운 제목
- */
 function updateChatHeader(title) {
     const chatHeader = document.querySelector('.chat-main .chat-header');
     if (chatHeader) {
@@ -130,7 +117,7 @@ function updateChatHeader(title) {
     }
 }
 
-// 채팅 목록 로드 (API 호출) (수정됨)
+// 채팅 목록 로드 (API 호출)
 async function loadChatList() {
     if (!userId) return;
 
@@ -159,22 +146,20 @@ async function loadChatList() {
         }
 
         const result = await response.json();
-        
+
         if (result && result.data && result.data.chatRooms && result.data.chatRooms.length > 0) {
             const chatRooms = result.data.chatRooms;
-            renderChatList(chatRooms, false); // 새로 렌더링
+            renderChatList(chatRooms, false);
 
             if (chatRooms.length > 0) {
                 lastChatRoomId = chatRooms[chatRooms.length - 1].chatRoomId;
-                // 자동 선택 로직 제거됨
             }
             if (chatRooms.length < CHAT_LIST_PAGE_SIZE) {
                 allChatRoomsLoaded = true;
             }
         } else {
-             renderChatList([], false);
-             allChatRoomsLoaded = true;
-             // 환영 메시지 호출 로직 제거 (validateToken에서 일괄 처리)
+            renderChatList([], false);
+            allChatRoomsLoaded = true;
         }
     } catch (error) {
         console.error('채팅 목록 로드 중 오류 발생:', error);
@@ -184,12 +169,11 @@ async function loadChatList() {
     }
 }
 
-// 추가 채팅 목록 로드 (스크롤 하단) (추가된 함수)
+// 추가 채팅 목록 로드 (스크롤 하단)
 async function loadMoreChatRooms() {
     if (isLoadingMoreChatRooms || allChatRoomsLoaded || !userId) return;
 
     isLoadingMoreChatRooms = true;
-    // 로딩 인디케이터를 목록 하단에 추가할 수 있습니다.
 
     try {
         const response = await fetch('https://www.visiblego.com/gateway/chatbot/chat-room-list', {
@@ -200,7 +184,7 @@ async function loadMoreChatRooms() {
             },
             body: JSON.stringify({
                 userId: userId,
-                chatRoomId: lastChatRoomId, // 마지막 채팅방 ID를 커서로 사용
+                chatRoomId: lastChatRoomId,
                 size: CHAT_LIST_PAGE_SIZE
             })
         });
@@ -213,11 +197,10 @@ async function loadMoreChatRooms() {
 
         if (result && result.data && result.data.chatRooms && result.data.chatRooms.length > 0) {
             const chatRooms = result.data.chatRooms;
-            renderChatList(chatRooms, true); // 기존 목록에 추가
+            renderChatList(chatRooms, true);
 
             const newLastChatRoomId = chatRooms[chatRooms.length - 1].chatRoomId;
-            
-            // 중복 데이터 수신 시 무한 루프 방지
+
             if (newLastChatRoomId === lastChatRoomId) {
                 allChatRoomsLoaded = true;
                 return;
@@ -228,24 +211,24 @@ async function loadMoreChatRooms() {
                 allChatRoomsLoaded = true;
             }
         } else {
-            allChatRoomsLoaded = true; // 더 이상 데이터가 없음
+            allChatRoomsLoaded = true;
         }
     } catch (error) {
         console.error('추가 채팅 목록 로드 중 오류 발생:', error);
-        allChatRoomsLoaded = true; // 오류 발생 시 더 이상 시도하지 않음
+        allChatRoomsLoaded = true;
     } finally {
         isLoadingMoreChatRooms = false;
     }
 }
 
-// 채팅 목록 렌더링 (수정됨)
+// chatbot.js
+
 function renderChatList(chatList, append = false) {
     const chatListContainer = document.getElementById('chatList');
-    
+
     if (!append) {
-        chatListContainer.innerHTML = ''; // 새로 렌더링 시 기존 목록 초기화
+        chatListContainer.innerHTML = '';
     } else {
-        // 추가 렌더링 시 로딩 인디케이터가 있다면 제거
         const indicator = chatListContainer.querySelector('.loading-indicator');
         if (indicator) {
             indicator.remove();
@@ -264,30 +247,53 @@ function renderChatList(chatList, append = false) {
         chatItem.className = 'chat-item';
         chatItem.dataset.chatId = chat.chatRoomId;
 
-        // 현재 선택된 채팅 ID와 비교하여 'active' 클래스를 부여합니다.
         if (chat.chatRoomId === currentChatId) {
             chatItem.classList.add('active');
         }
 
         chatItem.onclick = () => selectChat(chat.chatRoomId);
-        chatItem.innerHTML = `<span>${chat.firstMessage || '새로운 대화'}</span>`;
+
+
+        // 1. 표시할 제목 설정 (기본값 '새로운 대화')
+        const title = chat.firstMessage || '새로운 대화';
+
+        // 2. 날짜를 'YYYY/MM/DD' 형식으로 포맷팅
+        const creationDate = new Date(chat.createdAt);
+        const year = creationDate.getFullYear();
+        const month = String(creationDate.getMonth() + 1).padStart(2, '0');
+        const day = String(creationDate.getDate()).padStart(2, '0');
+        const formattedDate = `${year}/${month}/${day}`;
+
+        // 3. 제목과 날짜를 위한 새로운 HTML 구조 생성
+        chatItem.innerHTML = `
+            <div class="chat-item-content">
+                <span class="chat-item-title">${title}</span>
+                <span class="chat-item-date">${formattedDate}</span>
+            </div>
+        `;
+        
         chatListContainer.appendChild(chatItem);
     });
 };
 
 // 채팅 선택 (수정됨)
 function selectChat(chatId) {
-    if (isLoadingMoreMessages) {
+    const currentLoadingState = chatRoomStates[currentChatId];
+    if (currentLoadingState && currentLoadingState.isLoadingMoreMessages) {
         return;
     }
-    
+
     currentChatId = chatId;
     console.log(`채팅방 선택: ${chatId}`);
 
-    // 메시지 내역 페이징 상태 초기화
-    oldestMessageId = null;
-    allHistoryLoaded = false;
-    isLoadingMoreMessages = false;
+    // 해당 채팅방의 상태가 없으면 초기 상태를 생성
+    if (!chatRoomStates[currentChatId]) {
+        chatRoomStates[currentChatId] = {
+            oldestMessageId: null,
+            allHistoryLoaded: false,
+            isLoadingMoreMessages: false
+        };
+    }
 
     document.querySelectorAll('.chat-item').forEach(item => {
         item.classList.remove('active');
@@ -302,10 +308,12 @@ function selectChat(chatId) {
     loadChatContent(chatId);
 }
 
-// 채팅 내용 로드 (API 호출) (수정됨)
+// 채팅 내용 로드 (API 호출)
 async function loadChatContent(chatId) {
     const chatContent = document.getElementById('chatContent');
-    chatContent.innerHTML = ''; 
+    document.getElementById('suggestionContainer').classList.remove('show');
+    
+    chatContent.innerHTML = '';
     addMessageToChat('system', '대화 내용을 불러오는 중입니다...');
 
     try {
@@ -330,27 +338,31 @@ async function loadChatContent(chatId) {
         chatContent.innerHTML = '';
 
         if (result && result.data && result.data.length > 0) {
-            oldestMessageId = result.data[result.data.length - 1].chatMessageId;
-            if (result.data.length < CHAT_PAGE_SIZE) {
-                allHistoryLoaded = true;
-            }
-                result.data.reverse().forEach(msg => {       
+            result.data.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 
-                    if (msg.bot && (msg.isRecommended === true || msg.content.includes('고객님의 통신 성향을 바탕으로'))) {
-                        // isRecommend: true 이면 카드로 렌더링
-                        const { intro, plans } = parsePlanData(msg.content);
-                        renderPlanCards(intro, plans);
-                    } else {
-                        // 일반 메시지는 기존 방식으로 추가
-                        const sender = msg.bot ? 'bot' : 'user';
-                        addMessageToChat(sender, msg.content);
-                    }
-                });
+            chatRoomStates[currentChatId].oldestMessageId = result.data[0].messageId;
+
+            if (result.data.length < CHAT_PAGE_SIZE) {
+                chatRoomStates[currentChatId].allHistoryLoaded = true;
+            } else {
+                chatRoomStates[currentChatId].allHistoryLoaded = false;
+            }
+
+            result.data.forEach(msg => {
+                if (msg.bot && (msg.isRecommended === true || msg.content.includes('고객님의 통신 성향을 바탕으로') || msg.content.includes('고객님께 다음 요금제들을'))) {
+                    const { intro, plans } = parsePlanData(msg.content);
+                    // 과거 내역이므로 피드백 버튼을 표시하지 않음 (showFeedback = false)
+                    renderPlanCards(intro, plans, false, false);
+                } else {
+                    const sender = msg.bot ? 'bot' : 'user';
+                    addMessageToChat(sender, msg.content, msg.timestamp);
+                }
+            });
 
             chatContent.scrollTop = chatContent.scrollHeight;
         } else {
             addMessageToChat('system', '이전 대화 내용이 없습니다.');
-            allHistoryLoaded = true;
+            if(chatRoomStates[currentChatId]) chatRoomStates[currentChatId].allHistoryLoaded = true;
         }
 
     } catch (error) {
@@ -360,15 +372,26 @@ async function loadChatContent(chatId) {
     }
 }
 
-// 이전 대화 내역 추가 로드 (스크롤 상단 도달 시) (최종 수정)
+// 이전 대화 내역 추가 로드 (스크롤 상단 도달 시)
 async function loadMoreChatContent() {
-    if (isLoadingMoreMessages || allHistoryLoaded) {
+    const currentState = chatRoomStates[currentChatId];
+
+    // 해결 방안: oldestMessageId가 없으면(새 채팅방의 첫 대화) 로드를 중단
+    // 이 경우, 아직 서버에서 불러온 '이전 내역'이 없다는 의미이기 때문입니다.
+    if (!currentState.oldestMessageId) {
+        if (currentState) {
+            currentState.allHistoryLoaded = true; // 불필요한 추가 호출을 막기 위해 '모두 로드됨'으로 처리
+        }
         return;
     }
 
-    isLoadingMoreMessages = true;
+    if (!currentState || currentState.isLoadingMoreMessages || currentState.allHistoryLoaded) {
+        return;
+    }
+    currentState.isLoadingMoreMessages = true;
+
     const chatContent = document.getElementById('chatContent');
-    
+
     const loadingIndicator = document.createElement('div');
     loadingIndicator.className = 'loading-indicator';
     loadingIndicator.textContent = '이전 대화 불러오는 중...';
@@ -384,7 +407,7 @@ async function loadMoreChatContent() {
             body: JSON.stringify({
                 chatRoomId: currentChatId,
                 userId: userId,
-                lastMessageId: oldestMessageId,
+                lastMessageId: currentState.oldestMessageId,
                 pageSize: CHAT_PAGE_SIZE
             })
         });
@@ -396,68 +419,74 @@ async function loadMoreChatContent() {
         }
 
         const result = await response.json();
-        
+
         if (result && result.data && result.data.length > 0) {
-            const newOldestMessageId = result.data[result.data.length - 1].chatMessageId;
-            if (newOldestMessageId === oldestMessageId) {
-                allHistoryLoaded = true;
+            result.data.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+            const newOldestMessageId = result.data[0].messageId;
+
+            if (newOldestMessageId === currentState.oldestMessageId) {
+                currentState.allHistoryLoaded = true;
                 console.warn("서버로부터 중복된 데이터가 수신되어 이전 대화 로드를 중지합니다.");
                 return;
             }
-            
+
             const oldScrollHeight = chatContent.scrollHeight;
-            oldestMessageId = newOldestMessageId;
+            currentState.oldestMessageId = newOldestMessageId;
 
             if (result.data.length < CHAT_PAGE_SIZE) {
-                allHistoryLoaded = true;
+                currentState.allHistoryLoaded = true;
             }
 
-            result.data.reverse().forEach(msg => {
-                if (msg.bot && msg.isRecommended === true) {
+            for (let i = result.data.length - 1; i >= 0; i--) {
+                const msg = result.data[i];
+                if (msg.bot && (msg.isRecommended === true || msg.content.includes('고객님의 통신 성향을 바탕으로') || msg.content.includes('고객님께 다음 요금제들을'))) {
                     const { intro, plans } = parsePlanData(msg.content);
-                    renderPlanCards(intro, plans, true); 
+                    // 과거 내역이므로 피드백 버튼을 표시하지 않음 (showFeedback = false)
+                    renderPlanCards(intro, plans, true, false);
                 } else {
                     const sender = msg.bot ? 'bot' : 'user';
-                    prependMessageToChat(sender, msg.content);
+                    prependMessageToChat(sender, msg.content, msg.timestamp);
                 }
-            });
+            }
 
             const newScrollHeight = chatContent.scrollHeight;
             chatContent.scrollTop = newScrollHeight - oldScrollHeight;
 
         } else {
-            allHistoryLoaded = true;
+            currentState.allHistoryLoaded = true;
         }
 
     } catch (error) {
         console.error('이전 대화 내용 로드 중 오류 발생:', error);
         if(loadingIndicator) loadingIndicator.remove();
-        allHistoryLoaded = true;
+        if (chatRoomStates[currentChatId]) chatRoomStates[currentChatId].allHistoryLoaded = true;
     } finally {
-        isLoadingMoreMessages = false;
+        if (chatRoomStates[currentChatId]) chatRoomStates[currentChatId].isLoadingMoreMessages = false;
     }
 }
 
+
 // 새 채팅 생성
 function createNewChat() {
-    currentChatId = null; 
-    oldestMessageId = null;
-    allHistoryLoaded = false;
-    isLoadingMoreMessages = false;
+    currentChatId = null;
 
     displayWelcomeMessage();
 
     document.querySelectorAll('.chat-item').forEach(item => {
         item.classList.remove('active');
     });
-    
+
     console.log('새 채팅을 시작합니다. 다음 메시지는 새 채팅방을 생성합니다.');
 }
 
 // 환영 메시지 표시 함수
 function displayWelcomeMessage() {
     const chatContent = document.getElementById('chatContent');
+    const suggestionContainer = document.getElementById('suggestionContainer');
+    const messageInput = document.getElementById('messageInput');
 
+    // 1. 메인 채팅창에는 글자만 표시
     chatContent.innerHTML = `
         <div class="welcome-message">
             <div class="welcome-header">
@@ -481,10 +510,30 @@ function displayWelcomeMessage() {
                     </li>
                 </ul>
             </div>
-            <p class="start-prompt">아래 입력창에 궁금한 점을 입력해 보세요!</p>
+            <p class="start-prompt">아래 입력창에 궁금한 점을 직접 입력하거나 추천 질문을 눌러보세요!</p>
         </div>
     `;
-    
+
+    // 2. 하단 컨테이너에 추천 버튼 생성
+    suggestionContainer.innerHTML = ''; // 기존 버튼 비우기
+    const suggestions = ['요금제 추천', '내 정보 확인', '심심풀이'];
+
+    suggestions.forEach(text => {
+        const button = document.createElement('div');
+        button.className = 'suggestion-item';
+        button.textContent = text;
+        
+        button.onclick = () => {
+            messageInput.value = text;
+            messageInput.focus();
+        };
+        
+        suggestionContainer.appendChild(button);
+    });
+
+    // 3. 추천 버튼 컨테이너 보이기
+    suggestionContainer.classList.add('show');
+
     updateChatHeader('새로운 대화');
 }
 
@@ -521,6 +570,15 @@ async function sendMessage() {
             const createRoomResult = await createRoomResponse.json();
             if (createRoomResult && createRoomResult.data && createRoomResult.data.chatRoomId) {
                 currentChatId = createRoomResult.data.chatRoomId;
+
+                if (!chatRoomStates[currentChatId]) {
+                    chatRoomStates[currentChatId] = {
+                        oldestMessageId: null,
+                        allHistoryLoaded: false,
+                        isLoadingMoreMessages: false
+                    };
+                }
+
                 console.log(`새 채팅방 생성 완료: ID = ${currentChatId}`);
             } else {
                 throw new Error('채팅방 ID를 받아오지 못했습니다.');
@@ -545,16 +603,13 @@ async function sendMessage() {
         }
 
         const result = await response.json();
-        console.log('API 응답:', result);
-
         removeMessage(loadingMessageId);
-        
-        console.log(result);
 
         if (result && result.data && result.data.isRecommended === true) {
             const botMessage = result.data.message;
             const { intro, plans } = parsePlanData(botMessage);
-            renderPlanCards(intro, plans);
+            // 실시간 응답이므로 피드백 버튼을 표시함 (showFeedback = true)
+            renderPlanCards(intro, plans, false, true);
         } else {
             let botMessage = '응답을 받을 수 없습니다.';
             if (result && result.data && result.data.message) {
@@ -567,8 +622,7 @@ async function sendMessage() {
             console.log("새 채팅이 생성되었으므로 목록을 새로고침합니다.");
             updateChatHeader(message);
             await loadChatList();
-            
-            // 새 채팅 생성 후, 방 목록에서 해당 방을 활성화 상태로 만듭니다.
+
             document.querySelectorAll('.chat-item').forEach(item => {
                 item.classList.remove('active');
             });
@@ -588,7 +642,7 @@ async function sendMessage() {
     }
 }
 
-// STT로부터 메시지 입력 (전송하지 않고 입력창에만 넣기)
+// STT로부터 메시지 입력
 function setMessageFromSTT(message) {
     if (!message) return;
 
@@ -598,20 +652,19 @@ function setMessageFromSTT(message) {
 }
 
 // 채팅에 메시지 추가
-function addMessageToChat(sender, message) {
+function addMessageToChat(sender, message, timestamp) {
     const chatContent = document.getElementById('chatContent');
 
-    // "대화 내용을 불러오는 중입니다..." 또는 "이전 대화 내용이 없습니다." 같은 시스템 메시지는 welcome-message를 덮어쓰지 않도록 처리
     if (sender === 'system') {
         const welcomeMessage = chatContent.querySelector('.welcome-message');
         if (welcomeMessage) {
             welcomeMessage.remove();
         }
     } else {
-        // 실제 사용자나 봇의 메시지가 추가될 때 welcome-message가 있다면 제거
         const welcomeMessage = chatContent.querySelector('.welcome-message');
         if (welcomeMessage) {
             chatContent.innerHTML = '';
+            document.getElementById('suggestionContainer').classList.remove('show');
         }
     }
 
@@ -625,12 +678,13 @@ function addMessageToChat(sender, message) {
     messageBubble.className = 'message-bubble';
     messageBubble.textContent = message;
 
-     messageElement.appendChild(messageBubble);
+    messageElement.appendChild(messageBubble);
 
     if (sender !== 'system') {
         const messageTime = document.createElement('div');
         messageTime.className = 'message-time';
-        messageTime.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const date = timestamp ? new Date(timestamp) : new Date();
+        messageTime.textContent = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         messageElement.appendChild(messageTime);
     }
 
@@ -641,7 +695,7 @@ function addMessageToChat(sender, message) {
 }
 
 // 채팅에 메시지 앞에 추가 (이전 대화 로드용)
-function prependMessageToChat(sender, message) {
+function prependMessageToChat(sender, message, timestamp) {
     const chatContent = document.getElementById('chatContent');
 
     const messageElement = document.createElement('div');
@@ -652,6 +706,15 @@ function prependMessageToChat(sender, message) {
     messageBubble.textContent = message;
 
     messageElement.appendChild(messageBubble);
+
+    if (timestamp) {
+        const messageTime = document.createElement('div');
+        messageTime.className = 'message-time';
+        const date = new Date(timestamp);
+        messageTime.textContent = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        messageElement.appendChild(messageTime);
+    }
+
     chatContent.prepend(messageElement);
 }
 
@@ -793,7 +856,7 @@ function handleKeyPress(event) {
     }
 }
 
-// 음성 녹음 시작 (기존 함수 대체)
+// 음성 녹음 시작
 function startRecording() {
     toggleSTT();
 }
@@ -890,44 +953,34 @@ function movePlanPage() {
 
 function parsePlanData(text) {
     const plans = [];
-    // "요금제:"를 기준으로 텍스트를 나눕니다. 
-    // split 후 생길 수 있는 빈 문자열을 filter로 제거하여 안정성을 높입니다.
     const parts = text.split("요금제:").filter(p => p.trim() !== '');
 
     if (parts.length === 0) {
-        // 파싱할 데이터가 없는 경우
         return { intro: text, plans: [], outro: '' };
     }
 
-    // 첫 번째 부분은 소개 문구로 간주합니다.
     const intro = parts.shift().trim();
     let outro = '';
 
     const outroMarker = '또 저랑 무엇을 하길 원하나요?';
-    
-    // parts 배열에 아직 처리할 데이터가 남아 있는지 확인합니다.
+
     if (parts.length > 0) {
-        // 마지막 부분에 outro 텍스트가 포함되어 있는지 확인합니다.
         const lastPartIndex = parts.length - 1;
         let lastPart = parts[lastPartIndex];
 
         if (lastPart.includes(outroMarker)) {
             const splitLastPart = lastPart.split(outroMarker);
-            // 요금제 정보 부분만 남기고 업데이트합니다.
-            parts[lastPartIndex] = splitLastPart[0]; 
-            // outro 텍스트를 저장합니다.
+            parts[lastPartIndex] = splitLastPart[0];
             outro = splitLastPart[1] ? splitLastPart[1].trim() : '';
         }
     }
 
     parts.forEach(part => {
-        const lines = part.trim().split('\n').filter(line => line.trim() !== ''); // 빈 줄은 무시
+        const lines = part.trim().split('\n').filter(line => line.trim() !== '');
         if (lines.length < 1) return;
 
-        // 요금제 이름 파싱
         const plan = { '요금제': lines.shift().replace(/-|'/g, '').trim() };
 
-        // 요금제 세부 정보 파싱
         lines.forEach(line => {
             const detail = line.split(':');
             if (detail.length === 2) {
@@ -937,7 +990,6 @@ function parsePlanData(text) {
             }
         });
 
-        // 유효한 요금제 객체만 배열에 추가
         if (plan['요금제']) {
             plans.push(plan);
         }
@@ -946,24 +998,96 @@ function parsePlanData(text) {
     return { intro, plans, outro };
 }
 
+/**
+ * 사용자 피드백 버튼 클릭 처리 함수
+ */
+function handleFeedbackClick(buttonElement, feedbackText, displayText) {
+    // 버튼 컨테이너를 찾아 모든 버튼을 비활성화
+    const feedbackContainer = buttonElement.closest('.feedback-buttons');
+    if (feedbackContainer) {
+        feedbackContainer.querySelectorAll('button').forEach(btn => {
+            btn.disabled = true;
+            btn.classList.add('disabled');
+        });
+        // 선택된 버튼에 'selected' 클래스 추가
+        buttonElement.classList.add('selected');
+    }
 
-function renderPlanCards(intro, plans, prepend = false) {
+    // 사용자가 선택한 피드백을 채팅창에 표시
+    addMessageToChat('user', displayText);
+
+    // 서버로 피드백 메시지 전송
+    sendFeedbackToServer(feedbackText);
+}
+
+/**
+ * 피드백을 서버로 전송하는 함수
+ * @param {string} feedbackMessage - 서버로 전송할 메시지
+ */
+async function sendFeedbackToServer(feedbackMessage) {
+    if (!feedbackMessage || !currentChatId) return;
+
+    const loadingMessageId = addMessageToChat('bot', '응답을 처리중입니다...');
+
+    try {
+        const response = await fetch('https://www.visiblego.com/gateway/chatbot/api/chat', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                userId: userId,
+                chatRoomId: currentChatId,
+                message: feedbackMessage
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        removeMessage(loadingMessageId);
+
+        // 서버로부터의 후속 응답 처리
+        if (result && result.data && result.data.message) {
+            // 받은 응답이 또 다른 요금제 추천일 경우 (피드백 버튼 표시)
+            if (result.data.isRecommended === true) {
+                const { intro, plans } = parsePlanData(result.data.message);
+                renderPlanCards(intro, plans, false, true);
+            } else {
+                addMessageToChat('bot', result.data.message);
+            }
+        } else {
+            addMessageToChat('bot', '피드백에 대한 응답을 받지 못했습니다.');
+        }
+
+    } catch (error) {
+        console.error('피드백 전송 실패:', error);
+        removeMessage(loadingMessageId);
+        addMessageToChat('bot', '죄송합니다. 피드백 처리 중 오류가 발생했습니다.');
+    }
+}
+
+
+/**
+ * 추천 요금제 카드와 피드백 버튼을 렌더링하는 함수 (수정됨)
+ */
+function renderPlanCards(intro, plans, prepend = false, showFeedback = false) {
     const chatContent = document.getElementById('chatContent');
 
-    // 카드들을 감싸는 컨테이너 생성
     const cardsContainer = document.createElement('div');
     cardsContainer.className = 'message bot';
-    
+
     let cardsHTML = `<div class="message-bubble">`;
 
-    // 소개 문구가 있다면 추가
     if (intro) {
         cardsHTML += `<p class="plan-intro-text">${intro}</p>`;
     }
-    
+
     cardsHTML += `<div class="plan-cards-container">`;
 
-    // 각 요금제에 대한 카드 생성
     plans.forEach(plan => {
         cardsHTML += `
             <div class="plan-card">
@@ -977,14 +1101,32 @@ function renderPlanCards(intro, plans, prepend = false) {
         `;
     });
 
-    cardsHTML += `</div></div>`; // plan-cards-container, message-bubble 닫기
+    cardsHTML += `</div>`; // plan-cards-container 닫기
+
+    // showFeedback 플래그가 true일 때만 피드백 UI 렌더링
+    if (showFeedback) {
+        cardsHTML += `
+            <div class="feedback-section">
+                <div class="feedback-section-title">더 나은 추천을 위해 피드백을 남겨주세요!</div>
+                <div class="feedback-buttons">
+                    <button onclick="handleFeedbackClick(this, '데이터 부족', '데이터가 부족해요.')">데이터 부족</button>
+                    <button onclick="handleFeedbackClick(this, '데이터 너무 많음', '데이터가 너무 많아요.')">데이터 많음</button>
+                    <button onclick="handleFeedbackClick(this, '가격 비쌈', '가격이 비싸요.')">가격 비쌈</button>
+                    <button onclick="handleFeedbackClick(this, '가격 너무 저렴', '가격이 너무 저렴해요.')">가격 저렴</button>
+                    <button onclick="handleFeedbackClick(this, '부가 혜택 부족', '부가 혜택이 부족해요.')">혜택 부족</button>
+                    <button onclick="handleFeedbackClick(this, '끝', '만족스러워요.')" class="btn-positive">만족해요</button>
+                </div>
+            </div>
+        `;
+    }
+
+    cardsHTML += `</div>`; // message-bubble 닫기
     cardsContainer.innerHTML = cardsHTML;
-    
+
     if (prepend) {
-        // prepend가 true이면 앞에 추가
+        // 이전 대화 내역은 항상 피드백 없이 상단에 추가
         chatContent.prepend(cardsContainer);
     } else {
-        // 아니면 뒤에 추가하고 스크롤을 맨 아래로 이동
         const welcomeMessage = chatContent.querySelector('.welcome-message');
         if (welcomeMessage) {
             chatContent.innerHTML = '';

@@ -1,0 +1,489 @@
+/* 요금제 관리 페이지 전용 스타일 */
+
+/* 통계 카드 컨테이너 */
+.stats-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+/* 통계 카드 */
+.stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+}
+
+.stat-icon.premium {
+    background: linear-gradient(135deg, #f093fb, #f5576c);
+}
+
+.stat-icon.revenue {
+    background: linear-gradient(135deg, #4facfe, #00f2fe);
+}
+
+.stat-icon.growth {
+    background: linear-gradient(135deg, #43e97b, #38f9d7);
+}
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 0.25rem;
+    line-height: 1;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+/* 요금제 그리드 */
+.plans-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+/* 요금제 카드 */
+.plan-card {
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.plan-card:hover {
+    border-color: #667eea;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.15);
+}
+
+.plan-card.featured {
+    border-color: #f59e0b;
+    background: linear-gradient(135deg, #fef9c3, #fef7cd);
+}
+
+.plan-card.featured::before {
+    content: "인기";
+    position: absolute;
+    top: 12px;
+    right: -20px;
+    background: #f59e0b;
+    color: white;
+    padding: 0.25rem 2rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    transform: rotate(45deg);
+    box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
+}
+
+.plan-header {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.plan-name {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 0.5rem;
+}
+
+.plan-price {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: #667eea;
+    margin-bottom: 0.25rem;
+}
+
+.plan-price .currency {
+    font-size: 1.2rem;
+    font-weight: 500;
+}
+
+.plan-period {
+    color: #64748b;
+    font-size: 0.9rem;
+}
+
+.plan-description {
+    color: #4b5563;
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+    min-height: 48px;
+}
+
+.plan-features {
+    list-style: none;
+    margin-bottom: 1.5rem;
+}
+
+.plan-features li {
+    padding: 0.5rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #374151;
+}
+
+.plan-features li::before {
+    content: "✓";
+    color: #10b981;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.plan-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: #f8fafc;
+    border-radius: 8px;
+}
+
+.plan-stat {
+    text-align: center;
+}
+
+.plan-stat-number {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.plan-stat-label {
+    font-size: 0.8rem;
+    color: #64748b;
+}
+
+.plan-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.plan-actions .btn {
+    flex: 1;
+    font-size: 0.85rem;
+    padding: 0.6rem 1rem;
+}
+
+.plan-status {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.plan-status.active {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.plan-status.inactive {
+    background: #fef2f2;
+    color: #991b1b;
+}
+
+/* 구독 필터 */
+.subscription-filters {
+    background: #f8fafc;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    border: 1px solid #e2e8f0;
+}
+
+.filter-group {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.filter-label {
+    font-weight: 600;
+    color: #374151;
+    white-space: nowrap;
+}
+
+/* 구독 테이블 스타일 */
+.subscription-table {
+    font-size: 0.9rem;
+}
+
+.subscription-table th,
+.subscription-table td {
+    padding: 0.875rem 0.75rem;
+    vertical-align: middle;
+}
+
+.user-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.user-name {
+    font-weight: 500;
+    color: #1f2937;
+}
+
+.user-id {
+    font-size: 0.8rem;
+    color: #6b7280;
+}
+
+.plan-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.plan-name-cell {
+    font-weight: 500;
+    color: #667eea;
+}
+
+.plan-duration {
+    font-size: 0.8rem;
+    color: #6b7280;
+}
+
+.subscription-status {
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-align: center;
+}
+
+.subscription-status.active {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.subscription-status.cancelled {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.subscription-status.expired {
+    background: #fef2f2;
+    color: #991b1b;
+}
+
+.subscription-status.pending {
+    background: #e0f2fe;
+    color: #0891b2;
+}
+
+.date-cell {
+    font-size: 0.85rem;
+    color: #374151;
+}
+
+.amount-cell {
+    font-weight: 600;
+    color: #059669;
+}
+
+.action-btn {
+    background: #3b82f6;
+    color: white;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.8rem;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: all 0.2s ease;
+}
+
+.action-btn:hover {
+    background: #2563eb;
+    transform: translateY(-1px);
+}
+
+/* 폼 스타일 개선 */
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.form-textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 80px;
+    transition: all 0.3s ease;
+}
+
+.form-textarea:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* 빈 상태 스타일 개선 */
+.empty-plans {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: #6b7280;
+}
+
+.empty-plans i {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    color: #d1d5db;
+}
+
+.empty-plans h3 {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+    color: #374151;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 1024px) {
+    .stats-container {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .plans-grid {
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    }
+    
+    .filter-group {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .stats-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .stat-card {
+        padding: 1rem;
+    }
+    
+    .stat-icon {
+        width: 50px;
+        height: 50px;
+        font-size: 1.25rem;
+    }
+    
+    .stat-number {
+        font-size: 1.5rem;
+    }
+    
+    .plans-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .plan-card {
+        padding: 1rem;
+    }
+    
+    .plan-stats {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+    
+    .subscription-table {
+        font-size: 0.8rem;
+        min-width: 800px;
+    }
+    
+    .table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .header-controls {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+    
+    .search-input-group {
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .stat-card {
+        flex-direction: column;
+        text-align: center;
+        gap: 0.75rem;
+    }
+    
+    .plan-actions {
+        flex-direction: column;
+    }
+    
+    .subscription-table th,
+    .subscription-table td {
+        padding: 0.5rem 0.25rem;
+    }
+    
+    .user-info,
+    .plan-info {
+        gap: 0.125rem;
+    }
+    
+    .action-btn {
+        padding: 0.3rem 0.6rem;
+        font-size: 0.75rem;
+    }
+}

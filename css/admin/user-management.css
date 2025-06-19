@@ -1,0 +1,457 @@
+/* 사용자 관리 페이지 전용 스타일 */
+
+/* 검색 카드 스타일 */
+.search-card {
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    border: 2px solid #e2e8f0;
+}
+
+.search-form {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.search-input-group {
+    max-width: 100%;
+    margin-bottom: 0.75rem;
+}
+
+.search-help {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: #6b7280;
+    justify-content: center;
+}
+
+.search-help i {
+    color: #3b82f6;
+}
+
+/* 검색 통계 */
+.search-stats {
+    background: #e0f2fe;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    border: 1px solid #0891b2;
+}
+
+.stats-text {
+    font-size: 0.9rem;
+    color: #0f172a;
+}
+
+.stats-text strong {
+    color: #0891b2;
+    font-weight: 600;
+}
+
+/* 사용자 테이블 특화 스타일 */
+.user-table {
+    font-size: 0.9rem;
+}
+
+.user-table th,
+.user-table td {
+    padding: 0.875rem 0.75rem;
+    vertical-align: middle;
+}
+
+.user-table tbody tr {
+    transition: all 0.2s ease;
+}
+
+.user-table tbody tr:hover:not(.initial-state) {
+    background-color: #f0f9ff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* 사용자 정보 셀 스타일 */
+.user-name {
+    font-weight: 500;
+    color: #1f2937;
+}
+
+.user-email {
+    color: #3b82f6;
+    font-weight: 400;
+}
+
+.user-phone,
+.user-birthday {
+    color: #6b7280;
+    font-size: 0.85rem;
+}
+
+.user-date {
+    color: #374151;
+    font-size: 0.85rem;
+}
+
+/* 상태 뱃지 사용자 전용 스타일 */
+.status-badge.status-normal {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-badge.status-blocked {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+/* 차단 해제 시간 스타일 */
+.unban-time {
+    font-size: 0.8rem;
+    color: #ef4444;
+    font-weight: 500;
+}
+
+.unban-time.none {
+    color: #6b7280;
+    font-style: italic;
+}
+
+/* 토글 스위치 사용자 전용 */
+.user-toggle {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #10b981;
+    transition: .3s;
+    border-radius: 24px;
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .3s;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+input:checked + .toggle-slider {
+    background-color: #ef4444;
+}
+
+input:checked + .toggle-slider:before {
+    transform: translateX(20px);
+}
+
+.toggle-slider:hover {
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.2);
+}
+
+/* 액션 버튼 */
+.detail-btn {
+    background: #3b82f6;
+    color: white;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.8rem;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: all 0.2s ease;
+}
+
+.detail-btn:hover {
+    background: #2563eb;
+    transform: translateY(-1px);
+}
+
+/* 사용자 상세 정보 모달 스타일 */
+.detail-header {
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.detail-header h4 {
+    font-size: 1.25rem;
+    color: #1e293b;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.detail-stats {
+    font-size: 0.95rem;
+    color: #64748b;
+}
+
+.detail-stats strong {
+    color: #1e293b;
+    font-weight: 600;
+}
+
+/* 채팅 아이템 스타일 */
+.chat-item {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.chat-item:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+}
+
+.chat-info {
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.chat-message {
+    margin-bottom: 0.75rem;
+    color: #374151;
+    line-height: 1.5;
+}
+
+.chat-timestamp {
+    font-size: 0.85rem;
+    color: #6b7280;
+    margin-bottom: 0.5rem;
+}
+
+/* 금칙어 태그 */
+.forbidden-word-tag {
+    background: linear-gradient(135deg, #fef2f2, #fee2e2);
+    color: #991b1b;
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    font-weight: 500;
+    font-size: 0.85rem;
+    display: inline-block;
+    border: 1px solid #fecaca;
+    box-shadow: 0 1px 2px rgba(239, 68, 68, 0.1);
+}
+
+/* 채팅 삭제 버튼 */
+.chat-delete-btn {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    background: #f3f4f6;
+    color: #6b7280;
+    border: 1px solid #d1d5db;
+    padding: 0.4rem 0.6rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.chat-delete-btn:hover {
+    background: #ef4444;
+    color: white;
+    border-color: #dc2626;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+}
+
+.chat-delete-btn i {
+    font-size: 0.85rem;
+}
+
+/* 빈 채팅 리스트 */
+.empty-chat-list {
+    text-align: center;
+    padding: 3rem 2rem;
+    color: #6b7280;
+    font-size: 1rem;
+}
+
+.empty-chat-list i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    color: #d1d5db;
+}
+
+/* 초기 상태 스타일 */
+.initial-state .empty-state {
+    padding: 4rem 2rem;
+}
+
+.initial-state .empty-state i {
+    font-size: 4rem;
+    margin-bottom: 1.5rem;
+    color: #cbd5e1;
+}
+
+.initial-state .empty-state h3 {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+    color: #475569;
+}
+
+.initial-state .empty-state p {
+    color: #64748b;
+    font-size: 1rem;
+}
+
+/* 검색 버튼 비활성 상태 */
+.btn-search:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.btn-search:disabled:hover {
+    background: #9ca3af;
+    transform: none;
+}
+
+/* 모달 관련 스타일 개선 */
+.modal-large .modal-content {
+    max-width: 900px;
+}
+
+.detail-body {
+    max-height: 60vh;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+}
+
+.detail-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+.detail-body::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 3px;
+}
+
+.detail-body::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+}
+
+.detail-body::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 1024px) {
+    .user-table {
+        font-size: 0.85rem;
+    }
+    
+    .user-table th,
+    .user-table td {
+        padding: 0.75rem 0.5rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .search-form {
+        padding: 0 1rem;
+    }
+    
+    .search-input-group {
+        flex-direction: column;
+        border-radius: 8px;
+    }
+    
+    .search-input {
+        border-radius: 8px;
+        border-right: 2px solid #e2e8f0;
+        margin-bottom: 0.5rem;
+    }
+    
+    .btn-search {
+        border-radius: 8px;
+        width: 100%;
+    }
+    
+    .user-table {
+        font-size: 0.8rem;
+        min-width: 800px;
+    }
+    
+    .table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .chat-item {
+        padding: 1rem;
+    }
+    
+    .chat-delete-btn {
+        position: static;
+        margin-top: 1rem;
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .detail-body {
+        max-height: 50vh;
+    }
+}
+
+@media (max-width: 480px) {
+    .user-table th,
+    .user-table td {
+        padding: 0.5rem 0.25rem;
+        font-size: 0.75rem;
+    }
+    
+    .detail-btn {
+        padding: 0.3rem 0.5rem;
+        font-size: 0.75rem;
+    }
+    
+    .toggle-switch {
+        width: 36px;
+        height: 20px;
+    }
+    
+    .toggle-slider:before {
+        height: 14px;
+        width: 14px;
+        left: 3px;
+        bottom: 3px;
+    }
+    
+    input:checked + .toggle-slider:before {
+        transform: translateX(16px);
+    }
+}

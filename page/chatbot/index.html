@@ -32,8 +32,8 @@
             </div>
 
             <div class="user-profile" onclick="toggleProfileMenu()">
-                <!-- <div class="profile-icon"></div> -->
-                <span>사용자 이름</span>
+                <div class="profile-icon"></div>
+                <span id="userProfileName">사용자</span> 
                 <div class="profile-dropdown" id="profileDropdown">
                     <div class="dropdown-item" onclick="goToMyPage(event)">
                         <span></span>
@@ -49,12 +49,13 @@
 
         <!-- 메인 채팅 영역 -->
         <div class="chat-main">
-            <div class="chat-header">대화목록 이름</div>
+            <div class="chat-header">새로운 대화</div>
 
             <div class="chat-content" id="chatContent">
                 <!-- 채팅 메시지들이 여기에 동적으로 추가됩니다 -->
             </div>
 
+            <div class="suggestion-container" id="suggestionContainer"></div>
             <div class="chat-input-container">
                 <input type="text" class="chat-input" placeholder="무엇이든 물어보세요" id="messageInput"
                     onkeypress="handleKeyPress(event)">

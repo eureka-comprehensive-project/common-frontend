@@ -154,14 +154,9 @@ body {
     transform: translateY(-1px);
 }
 
-/* Page Visibility */
-.page {
-    display: none;
+/* Page Content */
+.page-content {
     padding: 2rem;
-}
-
-.page.active {
-    display: block;
 }
 
 /* Cards */
@@ -206,6 +201,7 @@ body {
     padding: 2rem;
 }
 
+/* Radio Buttons */
 .radio-group-inline {
     display: flex;
     gap: 1rem;
@@ -687,108 +683,7 @@ input:checked + .toggle-slider:before {
     100% { left: 100%; }
 }
 
-/* 채팅 아이템 스타일 */
-.chat-item {
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    padding: 1.5rem;
-    margin-bottom: 1rem;
-    position: relative;
-    transition: all 0.3s ease;
-}
-
-.chat-item:hover {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-/* 채팅 정보 스타일 */
-.chat-info {
-    margin-bottom: 0.75rem;
-}
-
-.chat-message {
-    margin-bottom: 0.75rem;
-    color: #374151;
-}
-
-.chat-timestamp {
-    font-size: 0.85rem;
-    color: #6b7280;
-    margin-bottom: 0.5rem;
-}
-
-/* 금칙어 태그 스타일 */
-.forbidden-word-tag {
-    background: #fef2f2;
-    color: #991b1b;
-    padding: 0.25rem 0.75rem;
-    border-radius: 20px;
-    font-weight: 500;
-    font-size: 0.9rem;
-    display: inline-block;
-}
-
-/* 채팅 삭제 버튼 스타일 */
-.chat-delete-btn {
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
-    background: #ef4444;
-    color: white;
-    border: none;
-    padding: 0.5rem 0.75rem;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 0.85rem;
-    transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-}
-
-.chat-delete-btn:hover {
-    background: #dc2626;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
-}
-
-.chat-delete-btn i {
-    font-size: 0.9rem;
-}
-
-/* 상세 정보 헤더 스타일 */
-.detail-header {
-    border-bottom: 1px solid #e2e8f0;
-    padding-bottom: 1rem;
-    margin-bottom: 1.5rem;
-}
-
-.detail-header h4 {
-    font-size: 1.25rem;
-    color: #1e293b;
-    margin-bottom: 0.5rem;
-}
-
-.detail-stats {
-    font-size: 0.95rem;
-    color: #64748b;
-}
-
-.detail-stats strong {
-    color: #1e293b;
-    font-weight: 600;
-}
-
-/* 빈 채팅 리스트 스타일 */
-.empty-chat-list {
-    text-align: center;
-    padding: 3rem;
-    color: #6b7280;
-    font-size: 1rem;
-}
-
-/* 로딩 스피너 스타일 */
+/* Loading Spinner */
 .loading-spinner {
     display: flex;
     justify-content: center;
@@ -810,20 +705,114 @@ input:checked + .toggle-slider:before {
     to { transform: rotate(360deg); }
 }
 
-/* 삭제 중 상태 */
-.chat-item.deleting {
-    opacity: 0.5;
-    pointer-events: none;
-}
-
-.chat-item.deleting .chat-delete-btn {
-    background: #6b7280;
-    cursor: not-allowed;
-}
-
 /* Text Center Utility */
 .text-center {
     text-align: center;
+}
+
+/* 로그아웃 모달 스타일 */
+.logout-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    backdrop-filter: blur(4px);
+}
+
+.logout-modal {
+    background: white;
+    border-radius: 12px;
+    padding: 0;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    animation: modalFadeIn 0.3s ease;
+}
+
+.logout-modal .modal-header {
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid #e2e8f0;
+    background: #f8fafc;
+    border-radius: 12px 12px 0 0;
+}
+
+.logout-modal .modal-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.logout-modal .modal-body {
+    padding: 2rem;
+    text-align: center;
+}
+
+.logout-modal .modal-body p {
+    margin: 0;
+    font-size: 1rem;
+    color: #374151;
+    line-height: 1.6;
+}
+
+.logout-modal .modal-footer {
+    padding: 1.5rem 2rem;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    background: #f8fafc;
+    border-radius: 0 0 12px 12px;
+}
+
+.modal-btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.modal-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.cancel-btn {
+    background: #6b7280;
+    color: white;
+}
+
+.cancel-btn:hover {
+    background: #4b5563;
+}
+
+.confirm-btn {
+    background: #ef4444;
+    color: white;
+}
+
+.confirm-btn:hover {
+    background: #dc2626;
+}
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
 }
 
 /* Responsive Design */
@@ -865,7 +854,7 @@ input:checked + .toggle-slider:before {
         align-items: flex-start;
     }
    
-    .page {
+    .page-content {
         padding: 1rem;
     }
    
@@ -889,57 +878,4 @@ input:checked + .toggle-slider:before {
     .radio-group-inline {
         justify-content: center;
     }
-    
-    .chat-item {
-        padding: 1rem;
-    }
-    
-    .chat-delete-btn {
-        position: static;
-        margin-top: 1rem;
-        width: 100%;
-        justify-content: center;
-    }
-
-    /* 사용자 상세 모달 - 채팅 아이템 스타일 */
-.chat-item {
-    position: relative; /* 삭제 버튼의 위치 기준점 */
-    background-color: #f8f9fa;
-    border: 1px solid #dee2e6;
-    border-radius: 8px;
-    padding: 15px;
-    margin-bottom: 15px;
-    transition: all 0.3s ease; /* 삭제 애니메이션을 위한 transition */
-}
-
-/* 채팅 로그 삭제 버튼 */
-.chat-delete-btn {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background: #f1f1f1;
-    border: 1px solid #ddd;
-    color: #888;
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.9rem;
-    transition: all 0.2s ease;
-}
-
-.chat-delete-btn:hover {
-    background: #e74c3c;
-    color: white;
-    border-color: #c0392b;
-}
-
-/* 삭제 중인 아이템 스타일 (선택사항) */
-.chat-item.deleting {
-    opacity: 0.5;
-    pointer-events: none;
-}
 }

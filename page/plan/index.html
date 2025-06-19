@@ -3,19 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>요금제 관리</title>
+    <title>요금제 관리 - 요기U+</title>
     <link rel="stylesheet" href="../../css/plan.css" />
 </head>
 <body>
     <!-- 사이드바 -->
     <div class="sidebar" id="sidebar">
-        <div class="sidebar-header">로고</div>
+        <div class="sidebar-header">
+            <img src="/image/sidebar_logo.svg" alt="요기U+" class="sidebar-logo" />
+        </div>
         <div class="sidebar-content">
             <div class="sidebar-item active" onclick="goToChatbot()">
-                <div class="chat-icon"></div>
+                <div class="chat-icon">💬</div>
                 챗봇
             </div>
-            <div class="sidebar-profile" onclick="openProfilePopup()">로그인한 사용자 이름 프로필</div>
+            <div class="sidebar-profile" onclick="openProfilePopup()">
+                <div class="profile-avatar" id="userAvatar">👤</div>
+                <div class="profile-text" id="userInfo">사용자님</div>
+            </div>
         </div>
     </div>
 
@@ -23,9 +28,14 @@
     <div class="main-content">
         <!-- 메인 컨테이너 -->
         <div class="container">
+            <!-- 페이지 헤더 -->
+            <div class="page-header">
+                <h1>요금제 찾기</h1>
+                <p>나에게 맞는 완벽한 요금제를 찾아보세요</p>
+            </div>
+
             <!-- 탭 네비게이션 -->
             <div class="tab-navigation">
-                <div class="tab-header">요금제</div>
                 <div class="tabs">
                     <div class="tab active" onclick="switchTab(this, 'all')">전체</div>
                     <div class="tab" onclick="switchTab(this, 'premium')">프리미엄</div>
@@ -40,7 +50,10 @@
             <!-- 필터 섹션 -->
             <div class="filter-section">
                 <div class="filter-left">
-                    <button class="filter-btn" onclick="openFilterPopup()">필터</button>
+                    <button class="filter-btn" onclick="openFilterPopup()">
+                        <span>🔍</span>
+                        필터
+                    </button>
                     <div class="selected-filters" id="selectedFilters">
                         <!-- 선택된 필터들이 여기에 표시됩니다 -->
                     </div>
@@ -50,7 +63,8 @@
             <!-- 요금제 카드들 -->
             <div class="pricing-cards">
                 <!-- API에서 로드된 요금제들이 여기에 표시됩니다 -->
-                <div style="text-align: center; padding: 40px; color: #666;">
+                <div class="loading-state">
+                    <div class="loading-icon">⏳</div>
                     <p>요금제 정보를 불러오는 중...</p>
                 </div>
             </div>
@@ -75,7 +89,7 @@
                         <div class="filter-tag" onclick="toggleTag(this)">너겟</div>
                         <div class="filter-tag" onclick="toggleTag(this)">청소년</div>
                         <div class="filter-tag" onclick="toggleTag(this)">복지</div>
-                        <div class="filter-tag" onclick="toggleTag(this)">전체</div>
+                        <div class="filter-tag selected" onclick="toggleTag(this)">전체</div>
                     </div>
                 </div>
 
@@ -105,46 +119,7 @@
                 <div class="filter-section-popup">
                     <div class="filter-section-title">혜택</div>
                     <div class="filter-brands">
-                        <div class="brand-item" onclick="toggleBrand(this)">
-                            <div class="brand-icon" style="background-color: #e74c3c;">T</div>
-                            <div class="brand-name">티빙</div>
-                        </div>
-                        <div class="brand-item" onclick="toggleBrand(this)">
-                            <div class="brand-icon" style="background-color: #e50914;">N</div>
-                            <div class="brand-name">넷플릭스</div>
-                        </div>
-                        <div class="brand-item" onclick="toggleBrand(this)">
-                            <div class="brand-icon" style="background-color: #ff0000;">Y</div>
-                            <div class="brand-name">유튜브 프리미엄</div>
-                        </div>
-                        <div class="brand-item" onclick="toggleBrand(this)">
-                            <div class="brand-icon" style="background-color: #1f3a93;">D</div>
-                            <div class="brand-name">디즈니+</div>
-                        </div>
-                        <div class="brand-item" onclick="toggleBrand(this)">
-                            <div class="brand-icon" style="background-color: #f39c12;">M</div>
-                            <div class="brand-name">멀티팩</div>
-                        </div>
-                        <div class="brand-item" onclick="toggleBrand(this)">
-                            <div class="brand-icon" style="background-color: #e74c3c;">H</div>
-                            <div class="brand-name">헬로렌탈 구독</div>
-                        </div>
-                        <div class="brand-item" onclick="toggleBrand(this)">
-                            <div class="brand-icon" style="background-color: #8b4513;">M</div>
-                            <div class="brand-name">밀리커피구독</div>
-                        </div>
-                        <div class="brand-item" onclick="toggleBrand(this)">
-                            <div class="brand-icon" style="background-color: #00bcd4;">S</div>
-                            <div class="brand-name">신한카드 Air</div>
-                        </div>
-                        <div class="brand-item" onclick="toggleBrand(this)">
-                            <div class="brand-icon" style="background-color: #9e9e9e;">U</div>
-                            <div class="brand-name">우리집지킴이<br>Easy2+</div>
-                        </div>
-                        <div class="brand-item" onclick="toggleBrand(this)">
-                            <div class="brand-icon" style="background-color: #1e88e5;">S</div>
-                            <div class="brand-name">삼성팩</div>
-                        </div>
+                        <!-- JavaScript로 동적 생성 -->
                     </div>
                 </div>
             </div>
@@ -158,8 +133,14 @@
     <div class="profile-popup" id="profilePopup">
         <div class="profile-popup-content">
             <div class="profile-popup-body">
-                <div class="profile-menu-item" onclick="goToMyPage()">마이페이지</div>
-                <div class="profile-menu-item logout" onclick="confirmLogout()">로그아웃</div>
+                <div class="profile-menu-item" onclick="goToMyPage()">
+                    <span>👤</span>
+                    마이페이지
+                </div>
+                <div class="profile-menu-item logout" onclick="confirmLogout()">
+                    <span>🚪</span>
+                    로그아웃
+                </div>
             </div>
         </div>
     </div>

@@ -263,15 +263,11 @@
         document.addEventListener('DOMContentLoaded', () => {
             console.log('관리자 대시보드 메인 페이지가 로드되었습니다.');
             
-            // 현재 페이지를 위한 사이드바 활성화 (금칙어 관리를 기본으로)
-            if (window.SidebarConfig) {
-                window.SidebarConfig.updateSidebarActive('forbidden-words');
-            }
+            // 메인 대시보드에서는 사이드바 활성화하지 않음 (아무것도 선택되지 않은 상태 유지)
             
             // 시스템 상태 체크 (선택적 구현)
-            checkSystemStatus();
+            // checkSystemStatus();
         });
-
     </script>
 </body>
 </html>

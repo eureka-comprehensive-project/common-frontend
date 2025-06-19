@@ -9,6 +9,9 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body>
+    <!-- Toast 알림 컨테이너 -->
+    <div id="toastContainer" class="toast-container"></div>
+
     <div class="dashboard-container">
         <!-- 사이드바는 sidebar-config.js에서 동적으로 생성 -->
         
@@ -61,34 +64,44 @@
                         </div>
                     </div>
                     <div class="card-body">
-                        <div class="table-container">
-                            <table class="data-table user-table">
-                                <thead>
-                                    <tr>
-                                        <th width="60">번호</th>
-                                        <th>이름</th>
-                                        <th>이메일</th>
-                                        <th>생년월일</th>
-                                        <th>전화번호</th>
-                                        <th>가입일</th>
-                                        <th width="80">상태</th>
-                                        <th width="120">차단해제시간</th>
-                                        <th width="100">금칙어 기록</th>
-                                        <th width="80">차단 관리</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="userTableBody">
-                                    <tr class="initial-state">
-                                        <td colspan="10" class="text-center">
-                                            <div class="empty-state">
-                                                <i class="fas fa-search"></i>
-                                                <h3>사용자를 검색해주세요</h3>
-                                                <p>이름 또는 이메일로 사용자를 검색할 수 있습니다</p>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                        <div class="table-wrapper">
+                            <div class="table-container">
+                                <table class="data-table user-table">
+                                    <thead>
+                                        <tr>
+                                            <th class="col-number">번호</th>
+                                            <th class="col-name">이름</th>
+                                            <th class="col-email">이메일</th>
+                                            <th class="col-birthday">생년월일</th>
+                                            <th class="col-phone">전화번호</th>
+                                            <th class="col-date">가입일</th>
+                                            <th class="col-status">상태</th>
+                                            <th class="col-unban">차단해제시간</th>
+                                            <th class="col-detail">금칙어 기록</th>
+                                            <th class="col-toggle">차단 관리</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="userTableBody">
+                                        <tr class="initial-state">
+                                            <td colspan="10" class="text-center">
+                                                <div class="empty-state">
+                                                    <i class="fas fa-search"></i>
+                                                    <h3>사용자를 검색해주세요</h3>
+                                                    <p>이름 또는 이메일로 사용자를 검색할 수 있습니다</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <!-- 로딩 상태 -->
+                            <div class="loading-overlay" id="loadingOverlay" style="display: none;">
+                                <div class="loading-spinner">
+                                    <div class="spinner"></div>
+                                    <span>사용자를 검색하는 중...</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -108,7 +121,10 @@
             </div>
             <div class="modal-body">
                 <div id="userDetailContent">
-                    <div class="loading-spinner"></div>
+                    <div class="loading-spinner">
+                        <div class="spinner"></div>
+                        <span>사용자 정보를 불러오는 중...</span>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer">

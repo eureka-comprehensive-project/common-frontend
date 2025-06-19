@@ -3,19 +3,23 @@
  * 금칙어 관리 및 사용자 관리 기능
  */
 
+let accessToken;
+
 document.addEventListener('DOMContentLoaded', () => {
     // --- 설정 ---
     const GATEWAY_URL = 'https://www.visiblego.com/gateway';
+
+    validateToken();
 
     // --- DOM 요소 ---
     const elements = {
         // 페이지
         forbiddenWordsPage: document.getElementById('forbiddenWordsPage'),
         userManagePage: document.getElementById('userManagePage'),
-        
+
         // 네비게이션
         navLinks: document.querySelectorAll('.nav-link[data-page]'),
-        
+
         // 금칙어 관리
         searchInput: document.getElementById('searchInput'),
         searchBtn: document.getElementById('searchBtn'),
@@ -27,15 +31,15 @@ document.addEventListener('DOMContentLoaded', () => {
         forbiddenWordsTableBody: document.getElementById('forbiddenWordsTableBody'),
         emptyState: document.getElementById('emptyState'),
         selectAllCheckbox: document.getElementById('selectAllCheckbox'),
-        
+
         // 필터 라디오 버튼
         filterRadios: document.querySelectorAll('input[name="forbiddenFilter"]'),
-        
+
         // 사용자 관리
         userSearchInput: document.getElementById('userSearchInput'),
         userSearchBtn: document.getElementById('userSearchBtn'),
         userTableBody: document.getElementById('userTableBody'),
-        
+
         // 모달
         addWordModal: document.getElementById('addWordModal'),
         userDetailModal: document.getElementById('userDetailModal'),
@@ -46,11 +50,73 @@ document.addEventListener('DOMContentLoaded', () => {
         detailCloseBtn: document.getElementById('detailCloseBtn'),
         detailCloseBtn2: document.getElementById('detailCloseBtn2'),
         userDetailContent: document.getElementById('userDetailContent'),
-        
+
         // 페이지 제목
         pageTitle: document.querySelector('.page-title'),
         pageSubtitle: document.querySelector('.page-subtitle')
     };
+
+    // 토큰 검증
+    async function validateToken() {
+        try {
+            accessToken = sessionStorage.getItem('accessToken');
+
+            if (!accessToken) {
+                console.log('토큰이 없습니다. 로그인 페이지로 이동합니다.');
+                redirectToLogin();
+                return;
+            }
+
+            const response = await fetch('https://www.visiblego.com/auth/validate', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                console.log('토큰이 유효하지 않습니다. 로그인 페이지로 이동합니다.');
+                sessionStorage.removeItem('accessToken'); // 무효한 토큰 제거
+                redirectToLogin();
+                return;
+            }
+
+            const result = await response.json();
+            console.log('토큰 검증 성공:', result);
+
+            let resultData = result.data
+            userId = resultData.userId;
+
+        } catch (error) {
+            console.error('토큰 검증 중 오류 발생:', error);
+            redirectToLogin();
+        }
+    }
+
+    // 로그인 페이지로 리다이렉트
+    function redirectToLogin() {
+        window.location.href = '/page/login'; // 또는 로그인 페이지 URL
+    }
+
+    // 채팅 목록 로드 (API 호출 예정)
+    // 채팅 목록 로드 (API 호출 예정)
+    async function loadChatList() {
+        try {
+            // TODO: 실제 API 호출로 대체
+            // const response = await fetch('/api/chat-list');
+            // const chatList = await response.json();
+
+            // 임시 데이터
+            const chatList = [
+            ];
+
+            renderChatList(chatList);
+        } catch (error) {
+            console.error('채팅 목록 로드 실패:', error);
+        }
+    }
+
 
     // --- 전역 상태 ---
     let allForbiddenWords = []; // 전체 원본 데이터
@@ -142,7 +208,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch(url, { headers: { 'Authorization': headers.Authorization } });
 
             if (!response.ok) throw new Error(`금칙어 목록 조회 실패: ${response.status}`);
-            
+
             const result = await response.json();
             let forbiddenWords = [];
             if (Array.isArray(result)) forbiddenWords = result;
@@ -237,7 +303,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ searchWord: searchTerm })
             });
             if (!response.ok) throw new Error(`사용자 검색 실패: ${response.status}`);
-            
+
             const result = await response.json();
             let users = [];
             if (result.statusCode === 200 && Array.isArray(result.data)) {
@@ -382,14 +448,14 @@ document.addEventListener('DOMContentLoaded', () => {
     /**
      * [함수 복원] 채팅 로그 삭제 처리
      */
-    window.deleteChatLogItem = async function(chatLogId) {
+    window.deleteChatLogItem = async function (chatLogId) {
         if (!confirm('이 금칙어 사용 기록을 정말 삭제하시겠습니까?')) return;
 
         const chatItem = document.querySelector(`[data-chat-id="${chatLogId}"]`);
         if (chatItem) chatItem.style.opacity = '0.5';
 
         const success = await deleteChatLog(chatLogId);
-        
+
         if (success) {
             showNotification('금칙어 사용 기록이 삭제되었습니다.', 'success');
             if (chatItem) {
@@ -411,11 +477,11 @@ document.addEventListener('DOMContentLoaded', () => {
             showNotification('금칙어 사용 기록 삭제에 실패했습니다.', 'error');
         }
     };
-    
+
     /**
      * [수정됨] 사용자 상세 정보 표시 (채팅 로그의 고유 ID 사용)
      */
-    window.showUserDetail = async function(userId) {
+    window.showUserDetail = async function (userId) {
         elements.userDetailContent.innerHTML = '<div class="loading-spinner"></div>';
         showModal(elements.userDetailModal);
         const userDetails = await getUserDetails(userId);
@@ -464,7 +530,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 chatListHtml = '<p class="empty-chat-list">금칙어 사용 내역이 없습니다.</p>';
             }
-            
+
             elements.userDetailContent.innerHTML = `
                 <div class="detail-header">
                     <h4>금칙어 사용 상세 내역</h4>
@@ -479,7 +545,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    window.toggleUserBlock = async function(userId, isBlocked) {
+    window.toggleUserBlock = async function (userId, isBlocked) {
         if (await toggleUserStatus(userId, isBlocked)) {
             showNotification(`사용자가 ${isBlocked ? '차단' : '차단 해제'}되었습니다.`, 'success');
             await searchUsers(elements.userSearchInput.value.trim());
@@ -490,7 +556,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    window.toggleSingleWordStatus = async function(wordId) {
+    window.toggleSingleWordStatus = async function (wordId) {
         if (await toggleWordStatus(wordId)) {
             showNotification('금칙어 상태가 변경되었습니다.', 'success');
             fetchForbiddenWords(currentSearchValue, currentFilter, true);
@@ -499,7 +565,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    window.deleteSingleWord = async function(wordId) {
+    window.deleteSingleWord = async function (wordId) {
         if (confirm('이 금칙어를 정말 삭제하시겠습니까?')) {
             if (await deleteForbiddenWord(wordId)) {
                 showNotification('금칙어가 삭제되었습니다.', 'success');
@@ -541,7 +607,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function bulkChangeWordStatus(targetStatus) {
         const selectedIds = getSelectedWordIds();
         if (selectedIds.length === 0) return showNotification('상태를 변경할 금칙어를 선택해주세요.', 'warning');
-        
+
         let successCount = 0;
         for (const id of selectedIds) {
             const word = allForbiddenWords.find(w => w.id == id);
@@ -609,6 +675,11 @@ document.addEventListener('DOMContentLoaded', () => {
         fetchForbiddenWords('', 'all', true);
         elements.userSearchBtn.disabled = true;
         elements.userSearchBtn.style.opacity = '0.6';
+    }
+
+    // 로그인 페이지로 리다이렉트
+    function redirectToLogin() {
+        window.location.href = '/page/login'; // 또는 로그인 페이지 URL
     }
 
     initialize();

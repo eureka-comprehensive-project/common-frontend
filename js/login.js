@@ -35,6 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const responseJson = await response.json();
       const accessToken = responseJson.data.accessToken;
+      const role = responseJson.data.role;
 
       if (accessToken) {
         sessionStorage.setItem('accessToken', accessToken);
@@ -42,7 +43,12 @@ document.addEventListener('DOMContentLoaded', () => {
         loginBtn.textContent = '로그인 완료';
 
         setTimeout(() => {
-          window.location.href = '../chatbot/';
+          if (role == "ROLE_ADMIN") {
+            window.location.href = '../admin/';
+          } else {
+            window.location.href = '../chatbot/';
+          }
+
         }, 1500);
       } else {
         throw new Error('accessToken이 없습니다.');

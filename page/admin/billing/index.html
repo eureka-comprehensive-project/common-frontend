@@ -1,253 +1,315 @@
 <!DOCTYPE html>
 <html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>요금제 관리 - 관리자 대시보드</title>
-    <link rel="stylesheet" href="../../../css/admin/common.css">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>요금제 관리 시스템</title>
     <link rel="stylesheet" href="../../../css/admin/billing.css">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-</head>
-<body>
-    <div class="dashboard-container">
-        <!-- 사이드바는 sidebar-config.js에서 동적으로 생성 -->
-        
-        <main class="main-content">
-            <header class="content-header">
-                <div class="header-left">
-                    <h1 class="page-title">요금제 관리</h1>
-                    <p class="page-subtitle">시스템 요금제를 관리하고 모니터링합니다</p>
-                </div>
-                <div class="header-right">
-                    <button class="btn btn-logout">
-                        <i class="fas fa-sign-out-alt"></i>
-                        로그아웃
-                    </button>
-                </div>
+  </head>
+  <body>
+    <div class="container">
+      <header class="header">
+        <div class="logo">로고</div>
+      </header>
+
+      <div class="main-content-wrapper">
+        <aside class="sidebar">
+          <nav>
+            <ul class="menu">
+              <li class="menu-item active">
+                <a href="#" class="menu-link" id="planManageBtn"
+                  >요금제 관리</a
+                >
+              </li>
+              <li class="menu-item">
+                <a href="#" class="menu-link" id="forbiddenWordsBtn"
+                  >금칙어 관리</a
+                >
+              </li>
+              <li class="menu-item">
+                <a href="#" class="menu-link" id="userManageBtn"
+                  >사용자 관리</a
+                >
+              </li>
+            </ul>
+          </nav>
+          <div class="sidebar-footer">관리자 : OOO</div>
+        </aside>
+
+        <main class="content">
+          <div id="planManagePage" class="page active">
+            <header class="page-header">
+              <h1 class="page-title">요금제 관리</h1>
+              <div class="header-actions">
+                <button class="btn-primary" id="addNewPlanBtn">신규 등록</button>
+              </div>
             </header>
 
-            <div class="page-content">
-                <!-- 요금제 통계 카드 -->
-                <div class="stats-container">
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="fas fa-users"></i>
-                        </div>
-                        <div class="stat-content">
-                            <div class="stat-number" id="totalUsers">-</div>
-                            <div class="stat-label">전체 사용자</div>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon premium">
-                            <i class="fas fa-crown"></i>
-                        </div>
-                        <div class="stat-content">
-                            <div class="stat-number" id="premiumUsers">-</div>
-                            <div class="stat-label">프리미엄 사용자</div>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon revenue">
-                            <i class="fas fa-chart-line"></i>
-                        </div>
-                        <div class="stat-content">
-                            <div class="stat-number" id="monthlyRevenue">-</div>
-                            <div class="stat-label">월 매출</div>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon growth">
-                            <i class="fas fa-trending-up"></i>
-                        </div>
-                        <div class="stat-content">
-                            <div class="stat-number" id="conversionRate">-</div>
-                            <div class="stat-label">전환율</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 요금제 현황 카드 -->
-                <div class="card">
-                    <div class="card-header">
-                        <h3><i class="fas fa-credit-card"></i> 요금제 현황</h3>
-                        <div class="header-controls">
-                            <button class="btn btn-primary" id="addPlanBtn">
-                                <i class="fas fa-plus"></i>
-                                새 요금제 추가
-                            </button>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <div class="plans-grid" id="plansGrid">
-                            <!-- 요금제 카드들이 동적으로 생성됩니다 -->
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 구독 관리 카드 -->
-                <div class="card">
-                    <div class="card-header">
-                        <h3><i class="fas fa-list-alt"></i> 구독 관리</h3>
-                        <div class="header-controls">
-                            <div class="search-input-group">
-                                <input type="text" id="subscriptionSearchInput" class="search-input" 
-                                       placeholder="사용자 이름 또는 이메일 검색">
-                                <button class="btn btn-search" id="subscriptionSearchBtn">
-                                    <i class="fas fa-search"></i>
-                                    검색
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <div class="subscription-filters">
-                            <div class="filter-group">
-                                <label class="filter-label">상태 필터:</label>
-                                <div class="radio-group-inline">
-                                    <label class="radio-option">
-                                        <input type="radio" name="statusFilter" value="all" checked>
-                                        <span class="radio-custom"></span>
-                                        <span class="radio-text">전체</span>
-                                    </label>
-                                    <label class="radio-option">
-                                        <input type="radio" name="statusFilter" value="active">
-                                        <span class="radio-custom"></span>
-                                        <span class="radio-text">활성</span>
-                                    </label>
-                                    <label class="radio-option">
-                                        <input type="radio" name="statusFilter" value="cancelled">
-                                        <span class="radio-custom"></span>
-                                        <span class="radio-text">취소</span>
-                                    </label>
-                                    <label class="radio-option">
-                                        <input type="radio" name="statusFilter" value="expired">
-                                        <span class="radio-custom"></span>
-                                        <span class="radio-text">만료</span>
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="table-container">
-                            <table class="data-table subscription-table">
-                                <thead>
-                                    <tr>
-                                        <th width="60">번호</th>
-                                        <th>사용자</th>
-                                        <th>이메일</th>
-                                        <th>요금제</th>
-                                        <th>상태</th>
-                                        <th>시작일</th>
-                                        <th>만료일</th>
-                                        <th>결제 금액</th>
-                                        <th width="120">액션</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="subscriptionTableBody">
-                                    <tr class="initial-state">
-                                        <td colspan="9" class="text-center">
-                                            <div class="empty-state">
-                                                <i class="fas fa-search"></i>
-                                                <h3>구독 정보를 검색해주세요</h3>
-                                                <p>사용자 이름 또는 이메일로 검색할 수 있습니다</p>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
+            <div class="search-filter-area">
+              <div class="search-group">
+                <input
+                  type="text"
+                  id="planSearchInput"
+                  placeholder="요금제명 검색"
+                  class="search-input-long"
+                />
+                <button class="btn-secondary" id="planSearchBtn">검색</button>
+              </div>
+              <div class="filter-actions">
+                <button class="btn-secondary" id="planFilterBtn" onclick="openFilterPopup()">필터</button>
+              </div>
             </div>
+
+            <div id="selectedFilters" class="selected-filters-container">
+              </div>
+
+            <div class="data-table-container">
+              <table class="data-table" id="planTable">
+                <thead>
+                  <tr>
+                    <th><input type="checkbox" id="selectAllCheckbox" /></th>
+                    <th>ID</th>
+                    <th>카테고리</th>
+                    <th>요금제명</th>
+                    <th>데이터</th>
+                    <th>테더링/쉐어링</th>
+                    <th>음성통화</th>
+                    <th>기본혜택</th>
+                    <th>프리미엄혜택</th>
+                    <th>미디어혜택</th>
+                    <th>월정액</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="planTableBody"></tbody>
+              </table>
+            </div>
+
+            <div class="table-actions-bottom">
+              <button class="btn-danger" id="deleteSelectedPlansBtn">
+                삭제
+              </button>
+            </div>
+          </div>
+
+          <div id="forbiddenWordsPage" class="page">
+            <header class="page-header">
+              <h1 class="page-title">금칙어 관리</h1>
+            </header>
+            <p>금칙어 관리 페이지 내용</p>
+          </div>
+
+          <div id="userManagePage" class="page">
+            <header class="page-header">
+              <h1 class="page-title">사용자 관리</h1>
+            </header>
+            <p>사용자 관리 페이지 내용</p>
+          </div>
         </main>
+      </div>
     </div>
 
-    <!-- 요금제 추가/편집 모달 -->
-    <div id="planModal" class="modal">
-        <div class="modal-backdrop"></div>
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3><i class="fas fa-plus-circle"></i> <span id="modalTitle">새 요금제 추가</span></h3>
-                <button class="modal-close" id="planModalCloseBtn">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <form id="planForm">
-                    <div class="form-group">
-                        <label class="form-label">요금제 이름</label>
-                        <input type="text" id="planName" name="name" class="form-input" 
-                               placeholder="예: 프리미엄 플랜" required>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">가격</label>
-                            <input type="number" id="planPrice" name="price" class="form-input" 
-                                   placeholder="0" min="0" step="100" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">기간 (일)</label>
-                            <input type="number" id="planDuration" name="duration" class="form-input" 
-                                   placeholder="30" min="1" required>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">설명</label>
-                        <textarea id="planDescription" name="description" class="form-textarea" 
-                                  placeholder="요금제 설명을 입력하세요" rows="3"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">상태</label>
-                        <div class="radio-group">
-                            <label class="radio-option">
-                                <input type="radio" name="status" value="active" checked>
-                                <span class="radio-custom"></span>
-                                <span class="radio-text">활성</span>
-                            </label>
-                            <label class="radio-option">
-                                <input type="radio" name="status" value="inactive">
-                                <span class="radio-custom"></span>
-                                <span class="radio-text">비활성</span>
-                            </label>
-                        </div>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" id="planModalCancelBtn">취소</button>
-                <button class="btn btn-primary" id="planModalSaveBtn">
-                    <i class="fas fa-save"></i>
-                    저장
-                </button>
+    <div id="filterPopup" class="modal">
+      <div class="modal-content filter-popup-content">
+        <span class="close-btn" onclick="closeFilterPopup()">&times;</span>
+        <h3>어떤 요금제를 찾으세요?</h3>
+
+        <div class="filter-section-popup">
+          <h4>카테고리</h4>
+          <div class="filter-tag-group" data-filter-type="planCategory">
+            <div class="filter-tag-btn selected" data-value="all">전체</div>
+            <div class="filter-tag-btn" data-value="프리미엄">프리미엄</div>
+            <div class="filter-tag-btn" data-value="유스">유스</div>
+            <div class="filter-tag-btn" data-value="시니어">시니어</div>
+            <div class="filter-tag-btn" data-value="너겟">너겟</div>
+            <div class="filter-tag-btn" data-value="청소년">청소년</div>
+            <div class="filter-tag-btn" data-value="복지">복지</div>
+            <div class="filter-tag-btn" data-value="다이렉트">다이렉트</div>
+            <div class="filter-tag-btn" data-value="키즈">키즈</div>
+          </div>
+        </div>
+
+        <div class="filter-section-popup">
+          <h4>요금범위</h4>
+          <div class="filter-tag-group" data-filter-type="monthlyFee">
+            <div class="filter-tag-btn" data-value="~5">~5만원대</div>
+            <div class="filter-tag-btn" data-value="6~8">6~8만원대</div>
+            <div class="filter-tag-btn" data-value="9~">9만원대~</div>
+            <div class="filter-tag-btn selected" data-value="all">상관 없어요</div>
+          </div>
+        </div>
+
+        <div class="filter-section-popup">
+          <h4>데이터</h4>
+          <div class="filter-tag-group" data-filter-type="dataAllowance">
+            <div class="filter-tag-btn" data-value="무제한">무제한</div>
+            <div class="filter-tag-btn" data-value="large">대용량</div>
+            <div class="filter-tag-btn" data-value="small">소용량</div>
+            <div class="filter-tag-btn selected" data-value="all">상관 없어요</div>
+          </div>
+        </div>
+
+        <div class="filter-section-popup">
+          <h4>혜택</h4>
+          <div class="filter-brands" id="benefitFilterContainer">
             </div>
         </div>
+
+        <div class="filter-actions">
+          <button class="btn-reset" onclick="clearAllFilters()">전체 해제</button>
+          <button class="btn-apply" onclick="applyFilter()">적용</button>
+        </div>
+      </div>
     </div>
 
-    <!-- 구독 상세 모달 -->
-    <div id="subscriptionDetailModal" class="modal">
-        <div class="modal-backdrop"></div>
-        <div class="modal-content modal-large">
-            <div class="modal-header">
-                <h3><i class="fas fa-receipt"></i> 구독 상세 정보</h3>
-                <button class="modal-close" id="subscriptionDetailCloseBtn">
-                    <i class="fas fa-times"></i>
-                </button>
+    <div id="addPlanModal" class="modal">
+      <div class="modal-content">
+        <h2 id="modalTitle">새 요금제 등록</h2>
+        <form id="planForm">
+          <fieldset class="form-section">
+            <legend>기본 정보</legend>
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="modalPlanName">요금제 이름:</label>
+                <input type="text" id="modalPlanName" required />
+              </div>
+              <div class="form-group">
+                <label for="modalCategory">카테고리:</label>
+                <input type="text" id="modalCategory" required />
+              </div>
+              <div class="form-group">
+                <label for="modalMonthlyFee">월정액:</label>
+                <input type="number" id="modalMonthlyFee" required />
+              </div>
             </div>
-            <div class="modal-body">
-                <div id="subscriptionDetailContent">
-                    <div class="loading-spinner"></div>
+          </fieldset>
+
+          <fieldset class="form-section">
+            <legend>데이터 설정</legend>
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="modalDataAllowance">기본 데이터량:</label>
+                <input type="text" id="modalDataAllowance" placeholder="숫자 또는 '무제한'" />
+              </div>
+              <div class="form-group">
+                <label for="modalDataAllowanceUnit">데이터 단위:</label>
+                <select id="modalDataAllowanceUnit">
+                  <option value="GB">GB</option>
+                  <option value="MB">MB</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="modalDataPeriod">데이터 제공 주기:</label>
+                <select id="modalDataPeriod">
+                  <option value="MONTH">월</option>
+                  <option value="DAY">일</option>
+                </select>
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset class="form-section">
+            <legend>테더링/가족 공유</legend>
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="modalTetheringDataAmount">테더링 데이터량:</label>
+                <input type="number" id="modalTetheringDataAmount" placeholder="숫자 (없으면 비워둠)" />
+              </div>
+              <div class="form-group">
+                <label for="modalTetheringDataUnit">테더링 단위:</label>
+                <select id="modalTetheringDataUnit">
+                  <option value="GB">GB</option>
+                  <option value="MB">MB</option>
+                </select>
+              </div>
+              <div class="form-group"></div>
+              <div class="form-group">
+                <label for="modalFamilyDataAmount">가족 공유 데이터량:</label>
+                <input type="number" id="modalFamilyDataAmount" placeholder="숫자 (없으면 비워둠)" />
+              </div>
+              <div class="form-group">
+                <label for="modalFamilyDataUnit">가족 공유 단위:</label>
+                <select id="modalFamilyDataUnit">
+                  <option value="GB">GB</option>
+                  <option value="MB">MB</option>
+                </select>
+              </div>
+              <div class="form-group"></div>
+            </div>
+          </fieldset>
+
+          <fieldset class="form-section">
+            <legend>음성 통화</legend>
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="modalVoiceAllowance">음성 통화(분):</label>
+                <input type="text" id="modalVoiceAllowance" placeholder="숫자 또는 '무제한'" />
+              </div>
+              <div class="form-group">
+                <label for="modalAdditionalCallAllowance">부가 통화(분):</label>
+                <input type="number" id="modalAdditionalCallAllowance" placeholder="숫자 (없으면 비워둠)" />
+              </div>
+              <div class="form-group"></div>
+            </div>
+          </fieldset>
+
+          <fieldset class="form-section benefit-management-section">
+            <legend>혜택 관리</legend>
+            <div class="benefit-selection-container">
+              <div class="benefit-section">
+                <h4>기본 혜택</h4>
+                <div class="benefit-controls">
+                  <select id="selectBasicBenefit"></select>
+                  <button
+                    type="button"
+                    id="addBasicBenefitBtn"
+                    class="add-benefit-btn"
+                  >
+                    +
+                  </button>
                 </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" id="subscriptionDetailCloseBtn2">닫기</button>
-            </div>
-        </div>
-    </div>
+                <ul id="basicBenefitList" class="benefit-list"></ul>
+              </div>
 
-    <!-- 스크립트 로드 -->
-    <script src="../../../js/admin/common.js"></script>
-    <script src="../../../js/admin/sidebar-config.js"></script>
+              <div class="benefit-section">
+                <h4>프리미엄 혜택</h4>
+                <div class="benefit-controls">
+                  <select id="selectPremiumBenefit"></select>
+                  <button
+                    type="button"
+                    id="addPremiumBenefitBtn"
+                    class="add-benefit-btn"
+                  >
+                    +
+                  </button>
+                </div>
+                <ul id="premiumBenefitList" class="benefit-list"></ul>
+              </div>
+
+              <div class="benefit-section">
+                <h4>미디어 혜택</h4>
+                <div class="benefit-controls">
+                  <select id="selectMediaBenefit"></select>
+                  <button
+                    type="button"
+                    id="addMediaBenefitBtn"
+                    class="add-benefit-btn"
+                  >
+                    +
+                  </button>
+                </div>
+                <ul id="mediaBenefitList" class="benefit-list"></ul>
+              </div>
+            </div>
+          </fieldset>
+
+          <div class="modal-actions">
+            <button type="button" id="modalPlanRegisterBtn">등록</button>
+            <button type="button" id="modalPlanCancelBtn" class="cancel-btn">취소</button>
+          </div>
+        </form>
+      </div>
+    </div>
     <script src="../../../js/admin/billing.js"></script>
-</body>
+  </body>
 </html>

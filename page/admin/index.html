@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>관리자 대시보드</title>
+    <link rel="stylesheet" href="../../css/admin.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fas fa-shield-alt"></i>
+                    <span>Admin Panel</span>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <ul class="nav-menu">
+                    <li class="nav-item">
+                        <a href="#" class="nav-link">
+                            <i class="fas fa-credit-card"></i>
+                            <span>요금제 관리</span>
+                        </a>
+                    </li>
+                    <li class="nav-item active">
+                        <a href="#" class="nav-link" data-page="forbiddenWordsPage">
+                            <i class="fas fa-ban"></i>
+                            <span>금칙어 관리</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" data-page="userManagePage">
+                            <i class="fas fa-users"></i>
+                            <span>사용자 관리</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="admin-info">
+                    <i class="fas fa-user-shield"></i>
+                    <span>관리자: OOO</span>
+                </div>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="content-header">
+                <div class="header-left">
+                    <h1 class="page-title">금칙어 관리</h1>
+                    <p class="page-subtitle">시스템 금칙어를 관리하고 모니터링합니다</p>
+                </div>
+                <div class="header-right">
+                    <button class="btn btn-logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                        로그아웃
+                    </button>
+                </div>
+            </header>
+
+            <div id="forbiddenWordsPage" class="page active">
+                <div class="card table-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-list"></i> 금칙어 목록</h3>
+                        <div class="header-controls">
+                            <div class="radio-group-inline">
+                                <label class="radio-option">
+                                    <input type="radio" name="forbiddenFilter" value="all" checked>
+                                    <span class="radio-custom"></span>
+                                    <span class="radio-text">전체</span>
+                                </label>
+                                <label class="radio-option">
+                                    <input type="radio" name="forbiddenFilter" value="used">
+                                    <span class="radio-custom"></span>
+                                    <span class="radio-text">사용중</span>
+                                </label>
+                                <label class="radio-option">
+                                    <input type="radio" name="forbiddenFilter" value="unused">
+                                    <span class="radio-custom"></span>
+                                    <span class="radio-text">미사용</span>
+                                </label>
+                            </div>
+                            <button class="btn btn-primary" id="addNewWordBtn">
+                                <i class="fas fa-plus"></i>
+                                신규 등록
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="search-section">
+                            <div class="search-input-group">
+                                <input type="text" id="searchInput" class="search-input" placeholder="검색할 금칙어를 입력하세요">
+                                <button class="btn btn-search" id="searchBtn">
+                                    <i class="fas fa-search"></i>
+                                    검색
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="table-controls">
+                            <div class="bulk-actions">
+                                <button class="btn btn-success btn-sm" id="enableSelectedBtn">
+                                    <i class="fas fa-check"></i>
+                                    선택 항목 사용으로 전환
+                                </button>
+                                <button class="btn btn-warning btn-sm" id="disableSelectedBtn">
+                                    <i class="fas fa-times"></i>
+                                    선택 항목 미사용으로 전환
+                                </button>
+                                <button class="btn btn-danger btn-sm" id="deleteBtn">
+                                    <i class="fas fa-trash"></i>
+                                    선택 항목 삭제
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="table-container">
+                            <table class="data-table" id="forbiddenWordsTable">
+                                <thead>
+                                    <tr>
+                                        <th width="50">
+                                            <label class="checkbox-container">
+                                                <input type="checkbox" id="selectAllCheckbox">
+                                                <span class="checkmark"></span>
+                                            </label>
+                                        </th>
+                                        <th width="80">번호</th>
+                                        <th>단어</th>
+                                        <th width="120">상태</th>
+                                        <th width="160">액션</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="forbiddenWordsTableBody">
+                                    </tbody>
+                            </table>
+                            <div class="empty-state" id="emptyState" style="display: none;">
+                                <i class="fas fa-search"></i>
+                                <h3>검색 결과가 없습니다</h3>
+                                <p>다른 검색어로 시도해보세요</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="userManagePage" class="page">
+                <div class="card search-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-user-search"></i> 사용자 검색</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="search-form">
+                            <div class="search-input-group">
+                                <input type="text" id="userSearchInput" class="search-input" placeholder="이름 또는 이메일을 입력하세요">
+                                <button class="btn btn-search" id="userSearchBtn">
+                                    <i class="fas fa-search"></i>
+                                    검색
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card table-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-users"></i> 사용자 목록</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-container">
+                            <table class="data-table user-table">
+                                <thead>
+                                    <tr>
+                                        <th width="60">번호</th>
+                                        <th>이름</th>
+                                        <th>이메일</th>
+                                        <th>생년월일</th>
+                                        <th>전화번호</th>
+                                        <th>가입일</th>
+                                        <th>상태</th>
+                                        <th>차단해제시간</th>
+                                        <th width="100">금칙어 사용기록</th>
+                                        <th width="120">차단</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="userTableBody">
+                                    </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="addWordModal" class="modal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-plus-circle"></i> 새 금칙어 등록</h3>
+                <button class="modal-close" id="modalCancelBtn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">금칙어</label>
+                    <input type="text" id="modalWordInput" class="form-input" placeholder="등록할 금칙어를 입력하세요">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">상태</label>
+                    <div class="radio-group">
+                        <label class="radio-option">
+                            <input type="radio" name="modalWordStatus" value="use" checked>
+                            <span class="radio-custom"></span>
+                            <span class="radio-text">사용</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="modalWordStatus" value="notuse">
+                            <span class="radio-custom"></span>
+                            <span class="radio-text">미사용</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="modalCancelBtn2">취소</button>
+                <button class="btn btn-primary" id="modalRegisterBtn">
+                    <i class="fas fa-save"></i>
+                    등록
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="userDetailModal" class="modal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h3><i class="fas fa-user-circle"></i> 사용자 상세 정보</h3>
+                <button class="modal-close" id="detailCloseBtn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="userDetailContent">
+                    </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="detailCloseBtn2">닫기</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../../js/admin.js"></script>
+</body>
+</html>

@@ -36,7 +36,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const responseJson = await response.json();
       const accessToken = responseJson.data.accessToken;
       const role = responseJson.data.role;
-      console.log(role);
 
       if (accessToken) {
         sessionStorage.setItem('accessToken', accessToken);

@@ -30,6 +30,12 @@ document.addEventListener('DOMContentLoaded', function() {
         document.querySelector('.edit-modal').classList.add('hidden');
     });
 
+    // 모달 외부 클릭 시 닫기
+    document.querySelector('.edit-modal').addEventListener('click', (e) => {
+        if (e.target === document.querySelector('.edit-modal')) {
+            document.querySelector('.edit-modal').classList.add('hidden');
+        }
+    });
 });
 
 // 토큰 검증
@@ -79,7 +85,6 @@ async function validateToken() {
 
 // 간단한 사용자 정보
 async function fetchUserProfile() {
-
     try {
         const response = await fetch('https://www.visiblego.com/gateway/user/profile', {
             method: 'POST',
@@ -134,7 +139,13 @@ async function fetchUserProfileDetailForEmailOnly() {
         }
 
         const email = result.data.email;
-        document.getElementById('profile-email').innerHTML = `${email}`;
+        document.getElementById('profile-email').textContent = email;
+
+        // 아바타에 이메일 첫 글자 표시
+        if (email) {
+            const emailInitial = email.charAt(0).toUpperCase();
+            document.getElementById('userAvatar').textContent = emailInitial;
+        }
 
     } catch (error) {
         console.error('이메일 불러오기 실패:', error);
@@ -178,7 +189,6 @@ async function fetchUserProfileDetail() {
     }
 }
 
-
 // 사용중인 요금제 불러오기
 async function fetchActivePlanBenefit() {
     try {
@@ -204,7 +214,6 @@ async function fetchActivePlanBenefit() {
         console.error('사용 중인 요금제 조회 과정 중 오류:', error);
         alert('사용 중인 요금제 정보를 불러오는 중 문제가 발생했습니다.');
     }
-
 }
 
 // 요금제 혜택 id 조회 함수
@@ -310,7 +319,7 @@ async function fetchUserUsageSummary() {
         const callUsage = record.callUsage;
         const messageUsage = record.messageUsage;
 
-        // // 2. 요금제 제공량 조회
+        // 2. 요금제 제공량 조회
         const planBenefitId = await getPlanBenefitId(userId);
         console.log("요금제 혜택 ID:", planBenefitId);
         if (!planBenefitId) {
@@ -425,7 +434,6 @@ async function fetchPlanAllowanceById(planId) {
     }
 }
 
-
 async function fetchUserUsagePattern() {
     try {
         const response = await fetch('https://www.visiblego.com/gateway/user/user-data-record/usage', {
@@ -481,7 +489,6 @@ async function fetchUserUsagePattern() {
                 if (usage.dataUsageUnit === 'MB') {
                     value = value / 1024; // MB → GB 변환
                 }
-                // label = `${value.toFixed(1)}GB`;
                 let displayValue = value.toFixed(1);
                 if (displayValue.endsWith('.0')) {
                     displayValue = parseInt(displayValue, 10); // 소수점 제거
@@ -519,7 +526,6 @@ async function fetchUserUsagePattern() {
         console.error('월 이용패턴 불러오기 오류:', error);
     }
 }
-
 
 // 단위 변환
 function convertToMB(value, unit) {
@@ -595,7 +601,7 @@ function redirectToLogin() {
     window.location.href = '/page/login';
 }
 
-// 쳇봇 페이지로 이동
+// 챗봇 페이지로 이동
 function moveChatbotPage() {
     window.location.href = '/page/chatbot';
 }
@@ -609,19 +615,25 @@ function goToMyPage() {
     window.location.href = '/page/mypage';
 }
 
-// 프로필 메뉴 열기
+// 프로필 메뉴 토글
 function toggleProfileMenu() {
-    const dropdown = document.getElementById('profileDropdown');
-    dropdown.style.display = (dropdown.style.display === 'block') ? 'none' : 'block';
+    const popup = document.getElementById('profilePopup');
+    popup.style.display = popup.style.display === 'block' ? 'none' : 'block';
 }
 
-// 외부 클릭 시 닫기
-document.addEventListener('click', function(event) {
-    const dropdown = document.getElementById('profileDropdown');
-    const profile = document.querySelector('.user-profile');
+// 프로필 팝업 닫기
+function closeProfilePopup() {
+    const popup = document.getElementById('profilePopup');
+    popup.style.display = 'none';
+}
 
-    if (!profile.contains(event.target)) {
-        dropdown.style.display = 'none';
+// 외부 클릭 시 프로필 팝업 닫기
+document.addEventListener('click', function(event) {
+    const popup = document.getElementById('profilePopup');
+    const profile = document.querySelector('.sidebar-profile');
+
+    if (popup && profile && !profile.contains(event.target) && popup.style.display === 'block') {
+        closeProfilePopup();
     }
 });
 

@@ -1,5 +1,6 @@
 // 전역 변수 선언
 let accessToken = null;
+let userId = null;
 
 // 카테고리 ID 매핑 (하드코딩)
 const categoryMap = {
@@ -17,279 +18,92 @@ const categoryMap = {
 // 혜택 데이터 저장 변수
 let benefitsData = [];
 
-// 사용자 정보 로드 함수 (강화된 디버깅 버전)
-async function loadUserInfo() {
-  console.log('🔍 사용자 정보 로드 시작');
-  console.log('Access Token:', accessToken ? '✅ 존재' : '❌ 없음');
+// 토큰 검증 및 사용자 정보 로드
+async function validateTokenAndLoadUser() {
+  console.log('🔍 토큰 검증 및 사용자 정보 로드 시작');
   
   try {
+    accessToken = sessionStorage.getItem('accessToken');
+    
     if (!accessToken) {
       console.log('❌ 토큰 없음 - 로그인 필요 표시');
-      document.getElementById('userInfo').textContent = '로그인 필요';
+      document.getElementById('profile-email').textContent = '로그인 필요';
       document.getElementById('userAvatar').textContent = '?';
       return;
     }
 
-    // 1. sessionStorage에서 기존 사용자 정보 확인
-    console.log('🔍 SessionStorage 확인 중...');
-    const storedUserInfo = sessionStorage.getItem('userInfo');
-    const storedUserName = sessionStorage.getItem('userName');
-    
-    console.log('Stored userInfo:', storedUserInfo);
-    console.log('Stored userName:', storedUserName);
-    
-    if (storedUserInfo) {
-      try {
-        const parsed = JSON.parse(storedUserInfo);
-        console.log('📋 저장된 사용자 정보:', parsed);
-        
-        let userName = null;
-        let userEmail = null;
-        
-        if (parsed.name) {
-          userName = parsed.name;
-          userEmail = parsed.email;
-        } else if (parsed.email) {
-          userName = parsed.email.split('@')[0];
-          userEmail = parsed.email;
-        } else if (parsed.userId) {
-          userName = parsed.userId;
-        }
-        
-        if (userName) {
-          console.log('✅ 저장된 정보로 사용자 표시:', userName);
-          updateUserDisplay(userName, userEmail);
-          return;
-        }
-      } catch (e) {
-        console.warn('⚠️ 사용자 정보 파싱 실패:', e);
+    // 토큰 검증
+    const response = await fetch('https://www.visiblego.com/auth/validate', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
       }
+    });
+
+    if (!response.ok) {
+      console.log('❌ 토큰이 유효하지 않습니다. 로그인 페이지로 이동합니다.');
+      sessionStorage.removeItem('accessToken');
+      redirectToLogin();
+      return;
     }
 
-    // 2. 여러 API 엔드포인트 시도
-    console.log('🌐 API 호출 시작...');
-    
-    // 2-1. /auth/validate 시도 (예시 코드 패턴)
-    try {
-      console.log('🔍 /auth/validate 호출 중...');
-      const validateResponse = await fetch('https://www.visiblego.com/auth/validate', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        }
-      });
+    const result = await response.json();
+    console.log('✅ 토큰 검증 성공:', result);
 
-      console.log('Validate Response Status:', validateResponse.status);
-      
-      if (validateResponse.ok) {
-        const result = await validateResponse.json();
-        console.log('✅ Validate API 응답:', result);
-        
-        if (result && result.data) {
-          const resultData = result.data;
-          console.log('📋 사용자 데이터:', resultData);
-          
-          let userName = null;
-          let userEmail = resultData.email;
-          
-          if (resultData.name) {
-            userName = resultData.name;
-          } else if (resultData.email) {
-            userName = resultData.email.split('@')[0];
-          } else if (resultData.userId) {
-            userName = resultData.userId;
-          }
-          
-          if (userName) {
-            console.log('✅ 사용자 정보 추출 성공:', userName);
-            // sessionStorage에 저장
-            sessionStorage.setItem('userName', userName);
-            sessionStorage.setItem('userInfo', JSON.stringify(resultData));
-            
-            updateUserDisplay(userName, userEmail);
-            showToast(`환영합니다, ${userName}님! 🎉`, 'success');
-            return;
-          }
-        }
-      }
-    } catch (error) {
-      console.warn('⚠️ /auth/validate 호출 실패:', error);
-    }
+    let resultData = result.data;
+    userId = resultData.userId;
+    console.log('사용자 ID:', userId);
 
-    // 2-2. /auth/user 시도 (기존 방식)
-    try {
-      console.log('🔍 /auth/user 호출 중...');
-      const userResponse = await fetch('https://www.visiblego.com/auth/user', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        }
-      });
+    // 사용자 상세 정보 로드
+    await fetchUserProfileDetailForEmailOnly();
 
-      console.log('User Response Status:', userResponse.status);
-      
-      if (userResponse.ok) {
-        const userData = await userResponse.json();
-        console.log('✅ User API 응답:', userData);
-        
-        let userName = null;
-        let userEmail = userData.email;
-        
-        if (userData.name) {
-          userName = userData.name;
-        } else if (userData.email) {
-          userName = userData.email.split('@')[0];
-        } else if (userData.userId) {
-          userName = userData.userId;
-        }
-        
-        if (userName) {
-          console.log('✅ 사용자 정보 추출 성공:', userName);
-          // sessionStorage에 저장
-          sessionStorage.setItem('userName', userName);
-          sessionStorage.setItem('userInfo', JSON.stringify(userData));
-          
-          updateUserDisplay(userName, userEmail);
-          showToast(`환영합니다, ${userName}님! 🎉`, 'success');
-          return;
-        }
-      }
-    } catch (error) {
-      console.warn('⚠️ /auth/user 호출 실패:', error);
-    }
-
-    // 2-3. /gateway/user 시도 (다른 패턴)
-    try {
-      console.log('🔍 /gateway/user 호출 중...');
-      const gatewayResponse = await fetch('https://www.visiblego.com/gateway/user', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        }
-      });
-
-      console.log('Gateway Response Status:', gatewayResponse.status);
-      
-      if (gatewayResponse.ok) {
-        const gatewayData = await gatewayResponse.json();
-        console.log('✅ Gateway API 응답:', gatewayData);
-        
-        // 다양한 응답 구조 처리
-        const userData = gatewayData.data || gatewayData;
-        
-        let userName = null;
-        let userEmail = userData.email;
-        
-        if (userData.name) {
-          userName = userData.name;
-        } else if (userData.email) {
-          userName = userData.email.split('@')[0];
-        } else if (userData.userId) {
-          userName = userData.userId;
-        }
-        
-        if (userName) {
-          console.log('✅ 사용자 정보 추출 성공:', userName);
-          // sessionStorage에 저장
-          sessionStorage.setItem('userName', userName);
-          sessionStorage.setItem('userInfo', JSON.stringify(userData));
-          
-          updateUserDisplay(userName, userEmail);
-          showToast(`환영합니다, ${userName}님! 🎉`, 'success');
-          return;
-        }
-      }
-    } catch (error) {
-      console.warn('⚠️ /gateway/user 호출 실패:', error);
-    }
-
-    // 3. 토큰에서 정보 추출 시도 (JWT 디코딩)
-    console.log('🔍 JWT 토큰 디코딩 시도...');
-    try {
-      const tokenPayload = parseJWT(accessToken);
-      console.log('📋 JWT 페이로드:', tokenPayload);
-      
-      if (tokenPayload) {
-        let userName = null;
-        let userEmail = tokenPayload.email || tokenPayload.sub;
-        
-        if (tokenPayload.name) {
-          userName = tokenPayload.name;
-        } else if (tokenPayload.email) {
-          userName = tokenPayload.email.split('@')[0];
-        } else if (tokenPayload.sub) {
-          userName = tokenPayload.sub;
-        }
-        
-        if (userName) {
-          console.log('✅ JWT에서 사용자 정보 추출 성공:', userName);
-          // sessionStorage에 저장
-          sessionStorage.setItem('userName', userName);
-          sessionStorage.setItem('userInfo', JSON.stringify(tokenPayload));
-          
-          updateUserDisplay(userName, userEmail);
-          showToast(`환영합니다, ${userName}님! 🎉`, 'success');
-          return;
-        }
-      }
-    } catch (error) {
-      console.warn('⚠️ JWT 디코딩 실패:', error);
-    }
-    
-    // 4. 기본값 표시
-    console.log('❌ 모든 방법 실패 - 기본값 표시');
-    document.getElementById('userInfo').textContent = '사용자님';
-    document.getElementById('userAvatar').textContent = '👤';
-    showToast('사용자 정보를 불러오지 못했습니다', 'warning');
-    
   } catch (error) {
-    console.error('❌ 사용자 정보 로드 중 치명적 오류:', error);
-    document.getElementById('userInfo').textContent = '사용자님';
-    document.getElementById('userAvatar').textContent = '👤';
-    showToast('사용자 정보 로드 실패', 'error');
+    console.error('❌ 토큰 검증 중 오류 발생:', error);
+    redirectToLogin();
   }
 }
 
-// JWT 토큰 파싱 함수
-function parseJWT(token) {
+// 사용자 상세 정보 불러오기 (이메일만)
+async function fetchUserProfileDetailForEmailOnly() {
   try {
-    const base64Url = token.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-    }).join(''));
-    
-    return JSON.parse(jsonPayload);
+    const response = await fetch('https://www.visiblego.com/gateway/user/profileDetail', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ id: userId })
+    });
+
+    const result = await response.json();
+
+    if (result.message === 'fail') {
+      console.warn(`${result.data.statusCode} ${result.data.detailMessage}`);
+      return;
+    }
+
+    const email = result.data.email;
+    document.getElementById('profile-email').textContent = email;
+
+    // 아바타에 이메일 첫 글자 표시
+    if (email) {
+      const emailInitial = email.charAt(0).toUpperCase();
+      document.getElementById('userAvatar').textContent = emailInitial;
+    }
+
+    showToast(`환영합니다! 🎉`, 'success');
+
   } catch (error) {
-    console.warn('JWT 파싱 실패:', error);
-    return null;
+    console.error('이메일 불러오기 실패:', error);
+    document.getElementById('profile-email').textContent = '사용자님';
+    document.getElementById('userAvatar').textContent = '👤';
   }
 }
 
-// 사용자 화면 표시 업데이트 함수
-function updateUserDisplay(userName, userEmail = null) {
-  console.log('🎨 사용자 화면 업데이트:', userName, userEmail);
-  
-  // 사용자 이름 표시
-  document.getElementById('userInfo').textContent = userName;
-  
-  // 이메일 첫 글자로 아바타 표시
-  if (userEmail) {
-    const emailInitial = userEmail.charAt(0).toUpperCase();
-    document.getElementById('userAvatar').textContent = emailInitial;
-    console.log('✅ 아바타 설정 (이메일):', emailInitial);
-  } else if (userName) {
-    // 이메일이 없으면 사용자명 첫 글자 사용
-    const nameInitial = userName.charAt(0).toUpperCase();
-    document.getElementById('userAvatar').textContent = nameInitial;
-    console.log('✅ 아바타 설정 (이름):', nameInitial);
-  } else {
-    document.getElementById('userAvatar').textContent = '👤';
-    console.log('✅ 아바타 설정 (기본값)');
-  }
+// 로그인 페이지로 이동
+function redirectToLogin() {
+  window.location.href = '/page/login';
 }
 
 // 챗봇 페이지로 이동
@@ -301,23 +115,16 @@ function goToChatbot() {
   }, 300);
 }
 
-// 프로필 팝업 열기
-function openProfilePopup() {
+// 프로필 메뉴 토글
+function toggleProfileMenu() {
   const popup = document.getElementById('profilePopup');
-  popup.style.display = 'block';
-  // 부드러운 애니메이션 효과
-  setTimeout(() => {
-    popup.style.opacity = '1';
-  }, 10);
+  popup.style.display = popup.style.display === 'block' ? 'none' : 'block';
 }
 
 // 프로필 팝업 닫기
 function closeProfilePopup() {
   const popup = document.getElementById('profilePopup');
-  popup.style.opacity = '0';
-  setTimeout(() => {
-    popup.style.display = 'none';
-  }, 200);
+  popup.style.display = 'none';
 }
 
 // 마이페이지로 이동
@@ -1178,8 +985,9 @@ function showConfirmModal(title, message, confirmText = '확인', cancelText = '
 document.addEventListener('click', function (e) {
   const profilePopup = document.getElementById('profilePopup');
   const filterPopup = document.getElementById('filterPopup');
+  const profile = document.querySelector('.sidebar-profile');
 
-  if (e.target === profilePopup) {
+  if (profilePopup && profile && !profile.contains(e.target) && profilePopup.style.display === 'block') {
     closeProfilePopup();
   }
   if (e.target === filterPopup) {
@@ -1189,14 +997,10 @@ document.addEventListener('click', function (e) {
 
 // 초기화
 document.addEventListener('DOMContentLoaded', function () {
-  // accessToken 초기화
-  accessToken = sessionStorage.getItem('accessToken') || '';
-
   console.log('🎉 요기U+ 요금제 관리 페이지가 로드되었습니다!');
-  console.log('Access Token:', accessToken ? '✅ 토큰 존재' : '❌ 토큰 없음');
 
-  // 사용자 정보 로드
-  loadUserInfo();
+  // 토큰 검증 및 사용자 정보 로드
+  validateTokenAndLoadUser();
 
   // 환영 메시지
   showToast('요기U+에 오신 것을 환영합니다! 🎉', 'success');

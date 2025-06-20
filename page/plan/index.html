@@ -10,16 +10,17 @@
     <!-- 사이드바 -->
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <img src="/image/sidebar_logo.svg" alt="요기U+" class="sidebar-logo" />
+            <img src="/logo.png" alt="요기U+" class="sidebar-logo" />
         </div>
         <div class="sidebar-content">
             <div class="sidebar-item active" onclick="goToChatbot()">
                 <div class="chat-icon">💬</div>
                 챗봇
             </div>
-            <div class="sidebar-profile" onclick="openProfilePopup()">
-                <div class="profile-avatar" id="userAvatar">👤</div>
-                <div class="profile-text" id="userInfo">사용자님</div>
+            <!-- 수정 후 -->
+            <div class="sidebar-profile" onclick="toggleProfileMenu()">
+            <div class="profile-avatar" id="userAvatar">👤</div>
+            <div class="profile-text" id="profile-email">사용자님</div>
             </div>
         </div>
     </div>
@@ -130,7 +131,7 @@
     </div>
 
     <!-- 프로필 팝업 -->
-    <div class="profile-popup" id="profilePopup">
+    <div class="profile-popup" id="profilePopup" style="display: none;">    
         <div class="profile-popup-content">
             <div class="profile-popup-body">
                 <div class="profile-menu-item" onclick="goToMyPage()">

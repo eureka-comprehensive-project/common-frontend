@@ -1,624 +1,518 @@
-let accessToken;
-let globalAllBenefits = [];
+/**
+ * billing.js - 요금제 관리 페이지 (기존 기능 유지)
+ */
 
-// =================================================================================
-// === [추가] plan.js의 categoryMap을 추가하여 카테고리 이름과 ID를 매핑합니다. ===
-// =================================================================================
-const categoryMap = {
-    '전체': 0,
-    '프리미엄': 1,
-    '유스': 2,
-    '시니어': 3,
-    '너겟': 4,
-    '청소년': 5,
-    '복지': 6,
-    '다이렉트': 7,
-    '키즈': 8
-};
-
-// 필터 상태를 저장할 전역 객체
-const currentFilters = {
-    category: [],
-    monthlyFee: [],
-    dataAllowance: [],
-    benefits: [], // 혜택 ID들을 저장
-};
-
-// 페이지를 활성화하고 다른 페이지는 비활성화합니다.
-function showPage(pageToShow) {
-    const allPages = document.querySelectorAll(".page");
-    allPages.forEach((page) => page.classList.remove("active"));
-    pageToShow.classList.add("active");
-}
-
-// 클릭된 메뉴 항목을 활성화합니다.
-function activateMenuItem(clickedBtn) {
-    const sidebarMenuItems = document.querySelectorAll(".menu-item");
-    sidebarMenuItems.forEach((item) => item.classList.remove("active"));
-    clickedBtn.closest(".menu-item").classList.add("active");
-}
-
-// 액세스 토큰의 유효성을 검증하고, 유효하지 않으면 로그인 페이지로 리디렉션합니다.
-async function validateToken() {
-    try {
-        accessToken = sessionStorage.getItem("accessToken");
-
-        if (!accessToken) {
-            console.log("토큰이 없습니다. 로그인 페이지로 리디렉션합니다.");
-            redirectToLogin();
-            return;
-        }
-
-        const response = await fetch("https://www.visiblego.com/auth/validate", {
-            method: "GET",
-            headers: {
-                Authorization: `Bearer ${accessToken}`,
-                "Content-Type": "application/json",
-            },
-        });
-
-        if (!response.ok) {
-            console.log("유효하지 않은 토큰입니다. 로그인 페이지로 리디렉션합니다.");
-            sessionStorage.removeItem("accessToken"); // Remove invalid token
-            redirectToLogin();
-            return;
-        }
-
-        const result = await response.json();
-        console.log("토큰 유효성 검사 성공:", result);
-    } catch (error) {
-        console.error("토큰 유효성 검사 중 오류 발생:", error);
-        redirectToLogin();
-    }
-
-    function redirectToLogin() {
-        window.location.href = "/page/login";
-    }
-}
-
-// 모든 혜택 목록을 서버에서 불러와 전역 변수에 저장합니다.
-async function fetchAllBenefits() {
-    try {
-        const response = await fetch(
-            "https://www.visiblego.com/gateway/plan/benefit",
-            {
-                method: "GET",
-                headers: {
-                    Authorization: `Bearer ${accessToken}`,
-                    "Content-Type": "application/json",
-                },
-            }
-        );
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(
-                `혜택을 불러오지 못했습니다: ${errorData.message || response.statusText
-                }`
-            );
-        }
-
-        const result = await response.json();
-        if (result.statusCode === 200 && result.data) {
-            globalAllBenefits = result.data;
-            console.log("모든 혜택을 성공적으로 불러왔습니다:", globalAllBenefits);
-        } else {
-            console.error("모든 혜택을 불러오는데 실패했습니다:", result.message);
-        }
-    } catch (error) {
-        console.error("모든 혜택 불러오기 중 오류 발생:", error);
-        alert(
-            "모든 혜택 데이터를 불러오는 중 네트워크 또는 서버 오류가 발생했습니다. 콘솔을 확인하세요."
-        );
-    }
-}
-
-// 모달 모드 (추가/수정)와 현재 수정 중인 요금제 ID를 관리합니다.
-let currentModalMode = "add";
-let currentEditingPlanId = null;
-
-document.addEventListener("DOMContentLoaded", async () => {
-    const BASE_URL = "https://www.visiblego.com/gateway/plan";
-
+document.addEventListener('DOMContentLoaded', () => {
     // DOM 요소 참조
-    const forbiddenWordsBtn = document.getElementById("forbiddenWordsBtn");
-    const userManageBtn = document.getElementById("userManageBtn");
-    const planManageBtn = document.getElementById("planManageBtn");
-    const forbiddenWordsPage = document.getElementById("forbiddenWordsPage");
-    const userManagePage = document.getElementById("userManagePage");
-    const planManagePage = document.getElementById("planManagePage");
+    const elements = {
+        // 검색 및 필터
+        searchInput: document.getElementById('searchInput'),
+        searchBtn: document.getElementById('searchBtn'),
+        filterBtn: document.getElementById('filterBtn'),
+        
+        // 버튼
+        addNewPlanBtn: document.getElementById('addNewPlanBtn'),
+        
+        // 테이블
+        plansTable: document.getElementById('plansTable'),
+        plansTableBody: document.getElementById('plansTableBody'),
+        emptyState: document.getElementById('emptyState'),
+        loadingOverlay: document.getElementById('loadingOverlay'),
+        
+        // 메인 모달
+        planModal: document.getElementById('planModal'),
+        planForm: document.getElementById('planForm'),
+        modalTitle: document.getElementById('modalTitle'),
+        modalCloseBtn: document.getElementById('modalCloseBtn'),
+        modalCancelBtn: document.getElementById('modalCancelBtn'),
+        modalSaveBtn: document.getElementById('modalSaveBtn'),
+        
+        // 모달 폼 필드
+        modalPlanName: document.getElementById('modalPlanName'),
+        modalCategory: document.getElementById('modalCategory'),
+        modalMonthlyFee: document.getElementById('modalMonthlyFee'),
+        modalDataAllowance: document.getElementById('modalDataAllowance'),
+        modalDataAllowanceUnit: document.getElementById('modalDataAllowanceUnit'),
+        modalDataPeriod: document.getElementById('modalDataPeriod'),
+        modalVoiceAllowance: document.getElementById('modalVoiceAllowance'),
+        modalAdditionalCallAllowance: document.getElementById('modalAdditionalCallAllowance'),
+        modalTetheringDataAmount: document.getElementById('modalTetheringDataAmount'),
+        modalTetheringDataUnit: document.getElementById('modalTetheringDataUnit'),
+        modalFamilyDataAmount: document.getElementById('modalFamilyDataAmount'),
+        modalFamilyDataUnit: document.getElementById('modalFamilyDataUnit'),
+        
+        // 혜택 관리
+        selectBasicBenefit: document.getElementById('selectBasicBenefit'),
+        addBasicBenefitBtn: document.getElementById('addBasicBenefitBtn'),
+        basicBenefitList: document.getElementById('basicBenefitList'),
+        selectPremiumBenefit: document.getElementById('selectPremiumBenefit'),
+        addPremiumBenefitBtn: document.getElementById('addPremiumBenefitBtn'),
+        premiumBenefitList: document.getElementById('premiumBenefitList'),
+        selectMediaBenefit: document.getElementById('selectMediaBenefit'),
+        addMediaBenefitBtn: document.getElementById('addMediaBenefitBtn'),
+        mediaBenefitList: document.getElementById('mediaBenefitList'),
+        
+        // 필터 모달
+        filterModal: document.getElementById('filterModal'),
+        filterModalCloseBtn: document.getElementById('filterModalCloseBtn'),
+        clearFiltersBtn: document.getElementById('clearFiltersBtn'),
+        applyFiltersBtn: document.getElementById('applyFiltersBtn'),
+        benefitFilterContainer: document.getElementById('benefitFilterContainer'),
+        
+        // 필터 표시
+        selectedFilters: document.getElementById('selectedFilters')
+    };
 
-    // 요금제 모달 관련 요소
-    const addNewPlanBtn = document.getElementById("addNewPlanBtn");
-    const addPlanModal = document.getElementById("addPlanModal");
-    const modalPlanRegisterBtn = document.getElementById("modalPlanRegisterBtn");
-    const modalPlanCancelBtn = document.getElementById("modalPlanCancelBtn");
-    const modalTitle = document.getElementById("modalTitle");
+    // 상태 관리
+    let allPlans = [];
+    let currentPlans = [];
+    let allBenefits = [];
+    let currentSearchValue = '';
+    let currentFilters = {
+        category: [],
+        monthlyFee: [],
+        dataAllowance: [],
+        benefits: []
+    };
+    
+    // 모달 상태
+    let currentModalMode = 'add'; // 'add' or 'edit'
+    let currentEditingPlanId = null;
 
-    // 요금제 테이블 요소
-    const planTableBody = document.getElementById("planTableBody");
+    // 카테고리 매핑
+    const categoryMap = {
+        '전체': 0, '프리미엄': 1, '유스': 2, '시니어': 3,
+        '너겟': 4, '청소년': 5, '복지': 6, '다이렉트': 7, '키즈': 8
+    };
 
-    // 검색 및 필터 버튼
-    const planSearchBtn = document.getElementById("planSearchBtn");
-    const planSearchInput = document.getElementById("planSearchInput");
-    const planFilterBtn = document.getElementById("planFilterBtn");
-
-    // 모달 내 혜택 목록 요소
-    const basicBenefitList = document.getElementById("basicBenefitList");
-    const premiumBenefitList = document.getElementById("premiumBenefitList");
-    const mediaBenefitList = document.getElementById("mediaBenefitList");
-
-    // 체크박스 및 일괄 삭제 요소
-    const selectAllCheckbox = document.getElementById("selectAllCheckbox");
-    const deleteSelectedPlansBtn = document.getElementById(
-        "deleteSelectedPlansBtn"
-    );
-
-    // 필터 모달 관련 요소
-    const filterPopup = document.getElementById("filterPopup");
-    const benefitFilterContainer = document.getElementById("benefitFilterContainer");
-    const selectedFiltersContainer = document.getElementById("selectedFilters");
-
-
-    // 페이지 로드 시 초기화 작업
-    await validateToken();
-    await fetchAllBenefits();
-    renderBenefitFilterCards();
-    showPage(planManagePage);
-    activateMenuItem(planManageBtn);
-    fetchAndRenderPlans(null, null);
-
-    // 요금제 데이터를 테이블에 렌더링합니다.
-    async function renderPlanTable(plans) {
-        const planTableBody = document.getElementById("planTableBody");
-        planTableBody.innerHTML = "";
-
-        if (!plans || plans.length === 0) {
-            planTableBody.innerHTML =
-                '<tr><td colspan="12">데이터가 없습니다.</td></tr>';
-            return;
-        }
-
-        plans.forEach((plan) => {
-            const row = document.createElement("tr");
-
-            const categoryDisplay = plan.planCategory || "";
-
-            console.log(plan.plan);
-
-            console.log(plan)
-
-            let dataDisplay = "";
-            if (plan.dataAllowance === 99999) {
-                dataDisplay = "무제한";
-            } else if (plan.dataAllowance >= 10 && plan.dataAllowance < 99999 && plan.dataAllowanceUnit) {
-                dataDisplay = plan.dataAllowance + " " + plan.dataAllowanceUnit;
-            } else if (plan.dataAllowance < 10 && plan.dataAllowanceUnit) {
-                dataDisplay = plan.dataAllowance + " " + plan.dataAllowanceUnit;
-            } else {
-                dataDisplay = "정보 없음";
-            }
-            if (plan.dataPeriod) {
-                let periodDisplay = "";
-                switch (plan.dataPeriod) {
-                    case "DAY":
-                        periodDisplay = "일";
-                        break;
-                    case "MONTH":
-                        periodDisplay = "월";
-                        break;
-                    default:
-                        periodDisplay = plan.dataPeriod;
-                }
-                dataDisplay += ` (${periodDisplay})`;
-            }
-
-            let tetheringSharingDisplay = "";
-            const tethering =
-                plan.tetheringDataAmount !== undefined && plan.tetheringDataUnit
-                    ? `테더링: ${plan.tetheringDataAmount}${plan.tetheringDataUnit}`
-                    : "";
-            const sharing =
-                plan.familyDataAmount !== undefined && plan.familyDataUnit
-                    ? `쉐어링: ${plan.familyDataAmount}${plan.familyDataUnit}`
-                    : "";
-
-            if (tethering && sharing) {
-                tetheringSharingDisplay = `${tethering} / ${sharing}`;
-            } else if (tethering) {
-                tetheringSharingDisplay = tethering;
-            } else if (sharing) {
-                tetheringSharingDisplay = sharing;
-            } else {
-                tetheringSharingDisplay = "없음";
-            }
-
-            let voiceCallDisplay = "";
-            if (plan.voiceAllowance === 0) {
-                voiceCallDisplay = "무제한";
-            } else if (plan.voiceAllowance !== undefined) {
-                voiceCallDisplay = `${plan.voiceAllowance}분`;
-            } else {
-                voiceCallDisplay = "정보 없음";
-            }
-
-            if (
-                plan.additionalCallAllowance !== undefined &&
-                plan.additionalCallAllowance > 0
-            ) {
-                voiceCallDisplay += ` (+${plan.additionalCallAllowance}분)`;
-            }
-
-            const monthlyFeeDisplay =
-                plan.monthlyFee != null
-                    ? `${plan.monthlyFee.toLocaleString()}원`
-                    : "정보 없음";
-
-            const currentPlanBenefits = (plan.benefitIdList || [])
-                .map((benefitId) => {
-                    return globalAllBenefits.find((b) => b.benefitId === benefitId);
-                })
-                .filter(Boolean);
-
-            const basicBenefits = [];
-            const premiumBenefits = [];
-            const mediaBenefits = [];
-
-            currentPlanBenefits.forEach((benefit) => {
-                if (benefit.benefitType === "BASIC") {
-                    basicBenefits.push(benefit.benefitName);
-                } else if (benefit.benefitType === "PREMIUM") {
-                    premiumBenefits.push(benefit.benefitName);
-                } else if (benefit.benefitType === "MEDIA") {
-                    mediaBenefits.push(benefit.benefitName);
-                }
-            });
-
-            const basicBenefitDisplay =
-                basicBenefits.length > 0 ? basicBenefits.join(", ") : "없음";
-            const premiumBenefitDisplay =
-                premiumBenefits.length > 0 ? premiumBenefits.join(", ") : "없음";
-            const mediaBenefitDisplay =
-                mediaBenefits.length > 0 ? mediaBenefits.join(", ") : "없음";
-
-            row.innerHTML = `
-        <td><input type="checkbox" class="row-checkbox" data-plan-id="${plan.planId}"></td>
-        <td>${plan.planId || ""}</td>
-        <td>${categoryDisplay}</td>
-        <td>${plan.planName || ""}</td>
-        <td>${dataDisplay}</td>
-        <td>${tetheringSharingDisplay}</td>
-        <td>${voiceCallDisplay}</td>
-        <td>${basicBenefitDisplay}</td>
-        <td>${premiumBenefitDisplay}</td>
-        <td>${mediaBenefitDisplay}</td>
-        <td>${monthlyFeeDisplay}</td>
-        <td>
-            <button class="btn-table-action modify-btn" data-plan-id="${plan.planId
-                }">수정</button>
-            </td>
-      `;
-            planTableBody.appendChild(row);
-        });
-        attachPlanButtonListeners();
-        updateSelectAllCheckboxState();
-    }
-
-    function attachPlanButtonListeners() {
-        const modifyPlanButtons = document.querySelectorAll(
-            "#planTable .modify-btn"
-        );
-        modifyPlanButtons.forEach((button) => {
-            button.onclick = null;
-            button.addEventListener("click", async (event) => {
-                const planId = event.target.dataset.planId;
-                currentModalMode = "edit";
-                currentEditingPlanId = planId;
-                modalTitle.textContent = "요금제 수정";
-                modalPlanRegisterBtn.textContent = "수정";
-
-                try {
-                    const response = await fetch(`${BASE_URL}/${planId}`, {
-                        method: "GET",
-                        headers: {
-                            Authorization: `Bearer ${accessToken}`,
-                        },
-                    });
-                    if (!response.ok) {
-                        const errorData = await response.json();
-                        throw new Error(
-                            `수정할 요금제 데이터를 불러오지 못했습니다: ${errorData.message || response.statusText
-                            }`
-                        );
-                    }
-                    const result = await response.json();
-                    const planData = result.data;
-
-                    document.getElementById("modalPlanName").value =
-                        planData.planName || "";
-                    document.getElementById("modalCategory").value =
-                        planData.planCategory || "";
-                    document.getElementById("modalMonthlyFee").value =
-                        planData.monthlyFee || "";
-
-                    document.getElementById("modalDataAllowance").value =
-                        planData.dataAllowance === 99999
-                            ? ""
-                            : planData.dataAllowance || "";
-                    document.getElementById("modalDataAllowanceUnit").value =
-                        planData.dataAllowanceUnit || "";
-                    document.getElementById("modalDataPeriod").value =
-                        planData.dataPeriod || "MONTH";
-
-                    document.getElementById("modalTetheringDataAmount").value =
-                        planData.tetheringDataAmount || "";
-                    document.getElementById("modalTetheringDataUnit").value =
-                        planData.tetheringDataUnit || "";
-                    document.getElementById("modalFamilyDataAmount").value =
-                        planData.familyDataAmount || "";
-                    document.getElementById("modalFamilyDataUnit").value =
-                        planData.familyDataUnit || "";
-
-                    document.getElementById("modalVoiceAllowance").value =
-                        planData.voiceAllowance === 0 ? "" : planData.voiceAllowance || "";
-                    document.getElementById("modalAdditionalCallAllowance").value =
-                        planData.additionalCallAllowance || "";
-
-                    const planBenefits = (planData.benefitIdList || [])
-                        .map((benefitId) => {
-                            return globalAllBenefits.find((b) => b.benefitId === benefitId);
-                        })
-                        .filter(Boolean);
-
-                    basicBenefitList.innerHTML = "";
-                    premiumBenefitList.innerHTML = "";
-                    mediaBenefitList.innerHTML = "";
-
-                    planBenefits.forEach((benefit) => {
-                        if (benefit.benefitType === "BASIC") {
-                            addBenefitItemToModal(
-                                basicBenefitList,
-                                benefit.benefitId,
-                                benefit.benefitName,
-                                "BASIC"
-                            );
-                        } else if (benefit.benefitType === "PREMIUM") {
-                            addBenefitItemToModal(
-                                premiumBenefitList,
-                                benefit.benefitId,
-                                benefit.benefitName,
-                                "PREMIUM"
-                            );
-                        } else if (benefit.benefitType === "MEDIA") {
-                            addBenefitItemToModal(
-                                mediaBenefitList,
-                                benefit.benefitId,
-                                benefit.benefitName,
-                                "MEDIA"
-                            );
-                        }
-                    });
-
-                    setupBenefitManagement(
-                        "BASIC",
-                        "addBasicBenefitBtn",
-                        "selectBasicBenefit",
-                        "basicBenefitList"
-                    );
-                    setupBenefitManagement(
-                        "PREMIUM",
-                        "addPremiumBenefitBtn",
-                        "selectPremiumBenefit",
-                        "premiumBenefitList"
-                    );
-                    setupBenefitManagement(
-                        "MEDIA",
-                        "addMediaBenefitBtn",
-                        "selectMediaBenefit",
-                        "mediaBenefitList"
-                    );
-
-                    addPlanModal.classList.add("active");
-                } catch (error) {
-                    console.error("수정할 요금제 데이터 로딩 중 오류 발생:", error);
-                    alert("요금제 데이터를 불러오는데 실패했습니다.");
-                }
-            });
-        });
-
-    }
-
-    // =================================================================================
-    // === [수정] fetchAndRenderPlans 함수 (카테고리 ID 전송 로직 반영) ===
-    // =================================================================================
-    async function fetchAndRenderPlans(searchTerm = null, filters = null) {
-        let url;
-        let method = "GET";
-        let body = null;
-        let fetchOptions = {};
-
-        const hasFilters = filters && ((filters.category && filters.category.length > 0) ||
-            (filters.monthlyFee && filters.monthlyFee.length > 0) ||
-            (filters.dataAllowance && filters.dataAllowance.length > 0) ||
-            (filters.benefits && filters.benefits.length > 0));
-        const hasSearchTerm = searchTerm && searchTerm.length > 0;
-
-        if (hasSearchTerm && !hasFilters) {
-            url = `${BASE_URL}/search`;
-            method = "POST";
-            body = JSON.stringify({ planName: searchTerm });
-            fetchOptions = {
-                method: method,
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${accessToken}`,
-                },
-                body: body,
-            };
-        } else if (hasFilters) {
-            url = `${BASE_URL}/filter/list`;
-            method = "POST";
-
-            // 선택된 카테고리 이름(string)을 ID(number)로 변환
-            const categoryIds = filters.category
-                .map(name => categoryMap[name]) // categoryMap을 사용해 ID 조회
-                .filter(id => id !== undefined); // 혹시 모를 오류 방지
-
-            const filterRequestDto = {
-                // ✅ 누락된 planName 제거 (DTO에 없음)
-                categoryIds: categoryIds,
-                allCategoriesSelected: filters.category.length === 0,
-
-                // ✅ 필드 이름 일치시킴
-                priceRanges: filters.monthlyFee.length > 0 ? filters.monthlyFee : [],
-                anyPriceSelected: filters.monthlyFee.length === 0,
-
-                dataOptions: filters.dataAllowance.length > 0 ? filters.dataAllowance : [],
-                anyDataSelected: filters.dataAllowance.length === 0,
-
-                benefitIds: filters.benefits.length > 0 ? filters.benefits : [],
-                noBenefitsSelected: false,
-            };
-
-            body = JSON.stringify(filterRequestDto);
-            fetchOptions = {
-                method: method,
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${accessToken}`,
-                },
-                body: body,
-            };
+    // --- 로딩 상태 관리 ---
+    function setLoading(isLoading) {
+        if (isLoading) {
+            elements.loadingOverlay.style.display = 'flex';
         } else {
-            url = `${BASE_URL}/`;
-            fetchOptions = {
-                method: method,
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${accessToken}`,
-                },
-            };
+            elements.loadingOverlay.style.display = 'none';
         }
+    }
 
-        console.log(`요금제 불러오는 중: URL=${url}, 메서드=${method}, 바디=${body || '없음'}`);
-
+    // --- API 함수들 ---
+    
+    /**
+     * 요금제 목록 조회
+     */
+    async function fetchPlans(searchValue = '', filters = null, forceRefresh = false) {
         try {
-            const response = await fetch(url, fetchOptions);
-            console.log(">>>>>>>>>>>>>>>>>>>." + response)
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(
-                    `요금제 불러오기 실패: ${errorData.message || response.statusText}`
-                );
+            // 캐시 활용 (강제 새로고침이 아닌 경우)
+            if (allPlans.length > 0 && !forceRefresh) {
+                currentSearchValue = searchValue;
+                updateSearchInput(searchValue);
+                currentPlans = applyFiltersAndSearch(allPlans, searchValue, filters);
+                renderPlansTable();
+                return;
             }
 
-            const result = await response.json();
-            console.log(">>>>>>>>>>>>>>>>>>>." + result.data)
+            setLoading(true);
+            
+            let result;
+            const hasFilters = filters && (
+                filters.category.length > 0 || filters.monthlyFee.length > 0 || 
+                filters.dataAllowance.length > 0 || filters.benefits.length > 0
+            );
+            const hasSearchTerm = searchValue && searchValue.trim().length > 0;
 
-            if (result.statusCode == 200) {
-                renderPlanTable(result.data);
+            if (hasSearchTerm && !hasFilters) {
+                // 검색만 있는 경우
+                result = await window.AdminCommon.apiPost('/plan/search', {
+                    planName: searchValue.trim()
+                });
+            } else if (hasFilters) {
+                // 필터가 있는 경우
+                const categoryIds = filters.category
+                    .map(name => categoryMap[name])
+                    .filter(id => id !== undefined);
+                
+                const filterRequestDto = {
+                    categoryIds: categoryIds,
+                    allCategoriesSelected: filters.category.length === 0,
+                    priceRanges: filters.monthlyFee.length > 0 ? filters.monthlyFee : [],
+                    anyPriceSelected: filters.monthlyFee.length === 0,
+                    dataOptions: filters.dataAllowance.length > 0 ? filters.dataAllowance : [],
+                    anyDataSelected: filters.dataAllowance.length === 0,
+                    benefitIds: filters.benefits.length > 0 ? filters.benefits : [],
+                    noBenefitsSelected: false
+                };
+                
+                result = await window.AdminCommon.apiPost('/plan/filter/list', filterRequestDto);
             } else {
-                alert(`데이터 불러오기 실패: ${result.message}`);
-                planTableBody.innerHTML =
-                    '<tr><td colspan="12">데이터를 불러오는데 실패했습니다.</td></tr>';
+                // 전체 조회
+                result = await window.AdminCommon.apiGet('/plan/');
+            }
+            
+            // 응답 데이터 파싱
+            let plans = [];
+            if (Array.isArray(result)) {
+                plans = result;
+            } else if (result.data && Array.isArray(result.data)) {
+                plans = result.data;
+            }
+
+            // 상태 업데이트
+            allPlans = plans;
+            currentSearchValue = searchValue;
+            updateSearchInput(searchValue);
+            currentPlans = applyFiltersAndSearch(allPlans, searchValue, filters);
+            
+            renderPlansTable();
+            
+        } catch (error) {
+            console.error('요금제 목록 조회 오류:', error);
+            alert('요금제 목록을 불러오는데 실패했습니다.');
+            allPlans = [];
+            currentPlans = [];
+            renderPlansTable();
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    /**
+     * 혜택 목록 조회
+     */
+    async function fetchBenefits() {
+        try {
+            const result = await window.AdminCommon.apiGet('/plan/benefit');
+            
+            if (result.statusCode === 200 && result.data) {
+                allBenefits = result.data;
+                setupBenefitSelects();
+                renderBenefitFilterCards();
+                console.log('혜택 목록 로드 완료:', allBenefits.length);
+            } else {
+                console.error('혜택 목록 조회 실패:', result.message);
+                alert('혜택 목록을 불러오는데 실패했습니다.');
             }
         } catch (error) {
-            console.error("요금제 데이터 불러오기 중 오류 발생:", error);
-            alert(
-                "요금제 데이터를 불러오는 중 네트워크 또는 서버 오류가 발생했습니다. 콘솔을 확인하세요."
-            );
-            planTableBody.innerHTML =
-                '<tr><td colspan="12">데이터를 불러오는데 실패했습니다.</td></tr>';
+            console.error('혜택 목록 조회 오류:', error);
+            alert('혜택 목록을 불러오는데 실패했습니다.');
         }
     }
 
-    if (planManageBtn) {
-        planManageBtn.addEventListener("click", (e) => {
-            e.preventDefault();
-            showPage(planManagePage);
-            activateMenuItem(planManageBtn);
-            currentFilters.category = [];
-            currentFilters.monthlyFee = [];
-            currentFilters.dataAllowance = [];
-            currentFilters.benefits = [];
-            initializeFilterPopup();
-            renderSelectedFilters();
-
-            planSearchInput.value = "";
-            fetchAndRenderPlans(null, null);
-        });
-    }
-
-    if (forbiddenWordsBtn) {
-        forbiddenWordsBtn.addEventListener("click", (e) => {
-            e.preventDefault();
-            showPage(forbiddenWordsPage);
-            activateMenuItem(forbiddenWordsBtn);
-        });
-    }
-
-    if (userManageBtn) {
-        userManageBtn.addEventListener("click", (e) => {
-            e.preventDefault();
-            showPage(userManagePage);
-            activateMenuItem(userManageBtn);
-        });
-    }
-
-    function addBenefitItemToModal(
-        targetListElement,
-        benefitId,
-        benefitName,
-        benefitType
-    ) {
-        const li = document.createElement("li");
-        li.dataset.benefitId = benefitId;
-        li.dataset.benefitType = benefitType;
-        li.innerHTML = `
-            <span>${benefitName}</span>
-            <button type="button" class="remove-benefit-btn" data-benefit-id="${benefitId}" data-benefit-type="${benefitType}">-</button>
-        `;
-        targetListElement.appendChild(li);
-
-        li.querySelector(".remove-benefit-btn").addEventListener(
-            "click",
-            (event) => {
-                event.target.closest("li").remove();
+    /**
+     * 요금제 등록
+     */
+    async function createPlan(planData) {
+        try {
+            const result = await window.AdminCommon.apiPost('/plan/register', planData);
+            
+            if (result.statusCode === 200) {
+                alert('요금제가 성공적으로 등록되었습니다.');
+                return true;
+            } else {
+                alert(`요금제 등록 실패: ${result.message || '알 수 없는 오류'}`);
+                return false;
             }
-        );
+        } catch (error) {
+            console.error('요금제 등록 오류:', error);
+            alert('요금제 등록 중 오류가 발생했습니다.');
+            return false;
+        }
     }
 
+    /**
+     * 요금제 수정
+     */
+    async function updatePlan(planId, planData) {
+        try {
+            const result = await window.AdminCommon.apiPut(`/plan/${planId}`, planData);
+            
+            if (result.statusCode === 200) {
+                alert('요금제가 성공적으로 수정되었습니다.');
+                return true;
+            } else {
+                alert(`요금제 수정 실패: ${result.message || '알 수 없는 오류'}`);
+                return false;
+            }
+        } catch (error) {
+            console.error('요금제 수정 오류:', error);
+            alert('요금제 수정 중 오류가 발생했습니다.');
+            return false;
+        }
+    }
+
+    /**
+     * 요금제 상세 조회
+     */
+    async function fetchPlanDetails(planId) {
+        try {
+            const result = await window.AdminCommon.apiGet(`/plan/${planId}`);
+            
+            if (result.statusCode === 200 && result.data) {
+                return result.data;
+            } else {
+                alert('요금제 정보를 불러오는데 실패했습니다.');
+                return null;
+            }
+        } catch (error) {
+            console.error('요금제 상세 조회 오류:', error);
+            alert('요금제 정보를 불러오는데 실패했습니다.');
+            return null;
+        }
+    }
+
+    // --- 필터링 및 검색 ---
+    
+    /**
+     * 필터링 및 검색 적용
+     */
+    function applyFiltersAndSearch(plans, searchValue, filters) {
+        let filteredPlans = [...plans];
+        
+        // 검색어 필터 적용
+        if (searchValue && searchValue.trim()) {
+            const searchTerm = searchValue.trim().toLowerCase();
+            filteredPlans = filteredPlans.filter(p => 
+                p.planName && p.planName.toLowerCase().includes(searchTerm)
+            );
+        }
+
+        // 고급 필터 적용
+        if (filters) {
+            // 카테고리 필터
+            if (filters.category.length > 0) {
+                filteredPlans = filteredPlans.filter(p => 
+                    filters.category.includes(p.planCategory)
+                );
+            }
+            
+            // 가격 필터
+            if (filters.monthlyFee.length > 0) {
+                filteredPlans = filteredPlans.filter(p => {
+                    const fee = p.monthlyFee || 0;
+                    return filters.monthlyFee.some(range => {
+                        if (range === '~5') return fee <= 50000;
+                        if (range === '6~8') return fee >= 60000 && fee <= 80000;
+                        if (range === '9~') return fee >= 90000;
+                        return false;
+                    });
+                });
+            }
+            
+            // 데이터 필터
+            if (filters.dataAllowance.length > 0) {
+                filteredPlans = filteredPlans.filter(p => {
+                    return filters.dataAllowance.some(dataType => {
+                        if (dataType === '무제한') return p.dataAllowance === 99999;
+                        if (dataType === 'large') return p.dataAllowance >= 100 && p.dataAllowance < 99999;
+                        if (dataType === 'small') return p.dataAllowance < 100 && p.dataAllowance > 0;
+                        return false;
+                    });
+                });
+            }
+            
+            // 혜택 필터
+            if (filters.benefits.length > 0) {
+                filteredPlans = filteredPlans.filter(p => {
+                    const planBenefits = p.benefitIdList || [];
+                    return filters.benefits.some(benefitId => 
+                        planBenefits.includes(benefitId)
+                    );
+                });
+            }
+        }
+        
+        return filteredPlans;
+    }
+
+    /**
+     * 검색 입력 필드 업데이트
+     */
+    function updateSearchInput(value) {
+        if (elements.searchInput.value.trim() !== value) {
+            elements.searchInput.value = value;
+        }
+    }
+
+    // --- 렌더링 함수들 ---
+    
+    /**
+     * 요금제 테이블 렌더링
+     */
+    function renderPlansTable() {
+        const tbody = elements.plansTableBody;
+        tbody.innerHTML = '';
+
+        if (!currentPlans || currentPlans.length === 0) {
+            elements.plansTable.style.display = 'none';
+            elements.emptyState.style.display = 'block';
+            return;
+        }
+
+        elements.plansTable.style.display = 'table';
+        elements.emptyState.style.display = 'none';
+
+        currentPlans.forEach((plan, index) => {
+            const row = document.createElement('tr');
+            
+            // 각 컬럼 데이터 포맷팅
+            const dataDisplay = formatDataDisplay(plan);
+            const tetheringDisplay = formatTetheringDisplay(plan);
+            const voiceDisplay = formatVoiceDisplay(plan);
+            const feeDisplay = formatFeeDisplay(plan);
+            
+            // 혜택 표시
+            const benefits = getBenefitsByType(plan.benefitIdList || []);
+            
+            row.innerHTML = `
+                <td>${plan.planId || ''}</td>
+                <td>${window.AdminCommon.escapeHtml(plan.planCategory || '')}</td>
+                <td class="plan-name" title="${window.AdminCommon.escapeHtml(plan.planName)}">${window.AdminCommon.escapeHtml(plan.planName)}</td>
+                <td>${dataDisplay}</td>
+                <td>${tetheringDisplay}</td>
+                <td>${voiceDisplay}</td>
+                <td>${benefits.basic}</td>
+                <td>${benefits.premium}</td>
+                <td>${benefits.media}</td>
+                <td>${feeDisplay}</td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="icon-btn btn-edit" onclick="handleEditPlan(${plan.planId})" title="수정">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                    </div>
+                </td>
+            `;
+            
+            tbody.appendChild(row);
+        });
+    }
+
+    /**
+     * 데이터 표시 포맷팅
+     */
+    function formatDataDisplay(plan) {
+        if (plan.dataAllowance === 99999) {
+            return '무제한';
+        } else if (plan.dataAllowance && plan.dataAllowanceUnit) {
+            let display = `${plan.dataAllowance}${plan.dataAllowanceUnit}`;
+            if (plan.dataPeriod) {
+                const periodText = plan.dataPeriod === 'DAY' ? '일' : '월';
+                display += ` (${periodText})`;
+            }
+            return display;
+        }
+        return '정보 없음';
+    }
+
+    /**
+     * 테더링/공유 표시 포맷팅
+     */
+    function formatTetheringDisplay(plan) {
+        const tethering = (plan.tetheringDataAmount && plan.tetheringDataUnit) ?
+            `테더링: ${plan.tetheringDataAmount}${plan.tetheringDataUnit}` : '';
+        const sharing = (plan.familyDataAmount && plan.familyDataUnit) ?
+            `쉐어링: ${plan.familyDataAmount}${plan.familyDataUnit}` : '';
+
+        if (tethering && sharing) {
+            return `${tethering} / ${sharing}`;
+        } else if (tethering) {
+            return tethering;
+        } else if (sharing) {
+            return sharing;
+        }
+        return '없음';
+    }
+
+    /**
+     * 음성 통화 표시 포맷팅
+     */
+    function formatVoiceDisplay(plan) {
+        if (plan.voiceAllowance === 0) {
+            return '무제한';
+        } else if (plan.voiceAllowance) {
+            let display = `${plan.voiceAllowance}분`;
+            if (plan.additionalCallAllowance) {
+                display += ` (+${plan.additionalCallAllowance}분)`;
+            }
+            return display;
+        }
+        return '정보 없음';
+    }
+
+    /**
+     * 요금 표시 포맷팅
+     */
+    function formatFeeDisplay(plan) {
+        return plan.monthlyFee != null ? 
+            `${plan.monthlyFee.toLocaleString()}원` : '정보 없음';
+    }
+
+    /**
+     * 혜택을 타입별로 분류하여 반환
+     */
+    function getBenefitsByType(benefitIds) {
+        const planBenefits = benefitIds
+            .map(benefitId => allBenefits.find(b => b.benefitId === benefitId))
+            .filter(Boolean);
+
+        const basic = planBenefits
+            .filter(b => b.benefitType === 'BASIC')
+            .map(b => b.benefitName)
+            .join(', ') || '없음';
+        
+        const premium = planBenefits
+            .filter(b => b.benefitType === 'PREMIUM')
+            .map(b => b.benefitName)
+            .join(', ') || '없음';
+        
+        const media = planBenefits
+            .filter(b => b.benefitType === 'MEDIA')
+            .map(b => b.benefitName)
+            .join(', ') || '없음';
+
+        return { basic, premium, media };
+    }
+
+    /**
+     * 혜택 선택 드롭다운 설정
+     */
+    function setupBenefitSelects() {
+        setupBenefitManagement('BASIC', 'addBasicBenefitBtn', 'selectBasicBenefit', 'basicBenefitList');
+        setupBenefitManagement('PREMIUM', 'addPremiumBenefitBtn', 'selectPremiumBenefit', 'premiumBenefitList');
+        setupBenefitManagement('MEDIA', 'addMediaBenefitBtn', 'selectMediaBenefit', 'mediaBenefitList');
+    }
+
+    /**
+     * 혜택 관리 설정
+     */
     function setupBenefitManagement(benefitType, addBtnId, selectId, listId) {
         const addBtn = document.getElementById(addBtnId);
         const selectElement = document.getElementById(selectId);
         const targetListElement = document.getElementById(listId);
 
+        // 선택 옵션 설정
         selectElement.innerHTML = '<option value="">혜택 선택</option>';
-        const filteredBenefits = globalAllBenefits.filter(
-            (b) => b.benefitType === benefitType
-        );
-        filteredBenefits.forEach((benefit) => {
-            const option = document.createElement("option");
+        const filteredBenefits = allBenefits.filter(b => b.benefitType === benefitType);
+        filteredBenefits.forEach(benefit => {
+            const option = document.createElement('option');
             option.value = benefit.benefitId;
             option.textContent = benefit.benefitName;
             selectElement.appendChild(option);
         });
 
+        // 추가 버튼 이벤트
         addBtn.onclick = null;
-        addBtn.addEventListener("click", () => {
+        addBtn.addEventListener('click', () => {
             const selectedBenefitId = selectElement.value;
             if (selectedBenefitId) {
                 const existingBenefitIds = Array.from(targetListElement.children).map(
-                    (li) => li.dataset.benefitId
+                    li => li.dataset.benefitId
                 );
                 if (existingBenefitIds.includes(selectedBenefitId)) {
-                    alert("이미 추가된 혜택입니다.");
+                    alert('이미 추가된 혜택입니다.');
                     return;
                 }
 
                 const selectedBenefit = filteredBenefits.find(
-                    (b) => b.benefitId == selectedBenefitId
+                    b => b.benefitId == selectedBenefitId
                 );
                 if (selectedBenefit) {
                     addBenefitItemToModal(
@@ -627,631 +521,492 @@ document.addEventListener("DOMContentLoaded", async () => {
                         selectedBenefit.benefitName,
                         benefitType
                     );
-                    selectElement.value = "";
+                    selectElement.value = '';
                 }
             } else {
-                alert("추가할 혜택을 선택해주세요.");
+                alert('추가할 혜택을 선택해주세요.');
             }
         });
     }
 
-    if (addNewPlanBtn) {
-        addNewPlanBtn.addEventListener("click", () => {
-            currentModalMode = "add";
-            currentEditingPlanId = null;
-            modalTitle.textContent = "새 요금제 등록";
-            modalPlanRegisterBtn.textContent = "등록";
+    /**
+     * 혜택 아이템을 모달에 추가
+     */
+    function addBenefitItemToModal(targetListElement, benefitId, benefitName, benefitType) {
+        const item = document.createElement('div');
+        item.className = 'benefit-item';
+        item.dataset.benefitId = benefitId;
+        item.dataset.benefitType = benefitType;
+        item.innerHTML = `
+            <span>${benefitName}</span>
+            <button type="button" class="remove-btn" data-benefit-id="${benefitId}">-</button>
+        `;
+        targetListElement.appendChild(item);
 
-            document.getElementById("modalPlanName").value = "";
-            document.getElementById("modalCategory").value = "";
-            document.getElementById("modalMonthlyFee").value = "";
-            document.getElementById("modalDataAllowance").value = "";
-            document.getElementById("modalDataAllowanceUnit").value = "GB";
-            document.getElementById("modalDataPeriod").value = "MONTH";
-            document.getElementById("modalTetheringDataAmount").value = "";
-            document.getElementById("modalTetheringDataUnit").value = "GB";
-            document.getElementById("modalFamilyDataAmount").value = "";
-            document.getElementById("modalFamilyDataUnit").value = "GB";
-            document.getElementById("modalVoiceAllowance").value = "";
-            document.getElementById("modalAdditionalCallAllowance").value = "";
-
-            basicBenefitList.innerHTML = "";
-            premiumBenefitList.innerHTML = "";
-            mediaBenefitList.innerHTML = "";
-
-            setupBenefitManagement(
-                "BASIC",
-                "addBasicBenefitBtn",
-                "selectBasicBenefit",
-                "basicBenefitList"
-            );
-            setupBenefitManagement(
-                "PREMIUM",
-                "addPremiumBenefitBtn",
-                "selectPremiumBenefit",
-                "premiumBenefitList"
-            );
-            setupBenefitManagement(
-                "MEDIA",
-                "addMediaBenefitBtn",
-                "selectMediaBenefit",
-                "mediaBenefitList"
-            );
-
-            addPlanModal.classList.add("active");
+        item.querySelector('.remove-btn').addEventListener('click', (event) => {
+            event.target.closest('.benefit-item').remove();
         });
     }
 
-    if (modalPlanRegisterBtn) {
-        modalPlanRegisterBtn.addEventListener("click", async () => {
-            const planName = document.getElementById("modalPlanName").value.trim();
-            const planCategory = document
-                .getElementById("modalCategory")
-                .value.trim();
-            const monthlyFee = parseFloat(
-                document.getElementById("modalMonthlyFee").value
-            );
-
-            let dataAllowanceInput = document
-                .getElementById("modalDataAllowance")
-                .value.trim();
-            const dataAllowance =
-                dataAllowanceInput === "" || dataAllowanceInput === "무제한"
-                    ? 99999
-                    : parseFloat(dataAllowanceInput);
-
-            const dataAllowanceUnit = document
-                .getElementById("modalDataAllowanceUnit")
-                .value.trim();
-            const dataPeriod = document
-                .getElementById("modalDataPeriod")
-                .value.trim();
-
-            const tetheringDataAmount =
-                document.getElementById("modalTetheringDataAmount").value.trim() === ""
-                    ? null
-                    : parseFloat(
-                        document.getElementById("modalTetheringDataAmount").value
-                    );
-            const tetheringDataUnit = document
-                .getElementById("modalTetheringDataUnit")
-                .value.trim();
-            const familyDataAmount =
-                document.getElementById("modalFamilyDataAmount").value.trim() === ""
-                    ? null
-                    : parseFloat(document.getElementById("modalFamilyDataAmount").value);
-            const familyDataUnit = document
-                .getElementById("modalFamilyDataUnit")
-                .value.trim();
-
-            let voiceAllowanceInput = document
-                .getElementById("modalVoiceAllowance")
-                .value.trim();
-            const voiceAllowance =
-                voiceAllowanceInput === "" || voiceAllowanceInput === "무제한"
-                    ? 0
-                    : parseFloat(voiceAllowanceInput);
-
-            const additionalCallAllowance =
-                document.getElementById("modalAdditionalCallAllowance").value.trim() ===
-                    ""
-                    ? null
-                    : parseFloat(
-                        document.getElementById("modalAdditionalCallAllowance").value
-                    );
-
-            const benefitIdList = [];
-            Array.from(basicBenefitList.children).forEach((li) =>
-                benefitIdList.push(parseInt(li.dataset.benefitId))
-            );
-            Array.from(premiumBenefitList.children).forEach((li) =>
-                benefitIdList.push(parseInt(li.dataset.benefitId))
-            );
-            Array.from(mediaBenefitList.children).forEach((li) =>
-                benefitIdList.push(parseInt(li.dataset.benefitId))
-            );
-
-            const planDataToSend = {
-                planName: planName,
-                planCategory: planCategory,
-                monthlyFee: monthlyFee,
-                dataAllowance: dataAllowance,
-                dataAllowanceUnit: dataAllowanceUnit,
-                dataPeriod: dataPeriod,
-                tetheringDataAmount: tetheringDataAmount,
-                tetheringDataUnit: tetheringDataUnit,
-                familyDataAmount: familyDataAmount,
-                familyDataUnit: familyDataUnit,
-                voiceAllowance: voiceAllowance,
-                additionalCallAllowance: additionalCallAllowance,
-                benefitIdList: benefitIdList,
-            };
-
-            if (!planName || !planCategory || isNaN(monthlyFee)) {
-                alert("요금제 이름, 카테고리, 월 요금은 필수 입력 항목입니다.");
-                return;
-            }
-            if (
-                (dataAllowance !== 99999 && isNaN(dataAllowance)) ||
-                (voiceAllowance !== 0 && isNaN(voiceAllowance))
-            ) {
-                alert("데이터 사용량 또는 음성 통화량은 유효한 숫자여야 합니다.");
-                return;
-            }
-            if (
-                (tetheringDataAmount !== null && isNaN(tetheringDataAmount)) ||
-                (familyDataAmount !== null && isNaN(familyDataAmount)) ||
-                (additionalCallAllowance !== null && isNaN(additionalCallAllowance))
-            ) {
-                alert(
-                    "테더링/쉐어링 데이터 또는 추가 통화량은 유효한 숫자여야 합니다."
-                );
-                return;
-            }
-
-            let url = `${BASE_URL}/register`;
-            let method = "POST";
-            let successMessage = "요금제가 성공적으로 등록되었습니다.";
-
-            if (currentModalMode === "edit" && currentEditingPlanId) {
-                url = `${BASE_URL}/${currentEditingPlanId}`;
-                method = "PUT";
-                successMessage = "요금제가 성공적으로 수정되었습니다.";
-
-                try {
-                    const getResponse = await fetch(
-                        `${BASE_URL}/${currentEditingPlanId}`,
-                        {
-                            method: "GET",
-                            headers: { Authorization: `Bearer ${accessToken}` },
-                        }
-                    );
-                    if (!getResponse.ok) {
-                        const errorData = await getResponse.json();
-                        throw new Error(
-                            `현재 요금제 상태를 가져오지 못했습니다: ${errorData.message || getResponse.statusText
-                            }`
-                        );
-                    }
-                    const currentPlanResult = await getResponse.json();
-                    planDataToSend.planStatus = currentPlanResult.data.planStatus;
-                } catch (error) {
-                    console.error(
-                        "업데이트를 위한 현재 요금제 상태를 가져오는 중 오류 발생:",
-                        error
-                    );
-                    alert("업데이트 중 현재 요금제 상태를 가져오는데 실패했습니다.");
-                    return;
-                }
-            } else {
-                planDataToSend.planStatus = "USE";
-            }
-
-            console.log("전송할 요금제 데이터:", JSON.stringify(planDataToSend, null, 2));
-
-            try {
-                const response = await fetch(url, {
-                    method: method,
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${accessToken}`,
-                    },
-                    body: JSON.stringify(planDataToSend),
-                });
-
-                const result = await response.json();
-
-                if (result.statusCode == 200) {
-                    alert(successMessage);
-                    addPlanModal.classList.remove("active");
-                    const currentSearchTerm = planSearchInput.value.trim();
-                    if (
-                        currentFilters.category.length > 0 ||
-                        currentFilters.monthlyFee.length > 0 ||
-                        currentFilters.dataAllowance.length > 0 ||
-                        currentFilters.benefits.length > 0
-                    ) {
-                        fetchAndRenderPlans(currentSearchTerm, currentFilters);
-                    } else if (currentSearchTerm) {
-                        fetchAndRenderPlans(currentSearchTerm, null);
-                    } else {
-                        fetchAndRenderPlans(null, null);
-                    }
-
-                } else {
-                    alert(`작업 실패: ${result.message || "알 수 없는 오류"}`);
-                }
-            } catch (error) {
-                console.error("요금제 등록/수정 중 오류 발생:", error);
-                alert(
-                    "요금제 등록/수정 중 네트워크 또는 서버 오류가 발생했습니다. 콘솔을 확인하세요."
-                );
-            }
-        });
-    }
-
-    if (modalPlanCancelBtn) {
-        modalPlanCancelBtn.addEventListener("click", () => {
-            addPlanModal.classList.remove("active");
-        });
-    }
-
-    if (addPlanModal) {
-        addPlanModal.addEventListener("click", (e) => {
-            if (e.target === addPlanModal) {
-                addPlanModal.classList.remove("active");
-            }
-        });
-    }
-
-    if (planSearchBtn && planSearchInput) {
-        planSearchBtn.addEventListener("click", () => {
-            const searchTerm = planSearchInput.value.trim();
-            fetchAndRenderPlans(searchTerm, null);
-        });
-        planSearchInput.addEventListener("keypress", (e) => {
-            if (e.key === "Enter") {
-                planSearchBtn.click();
-            }
-        });
-    }
-
-    if (selectAllCheckbox) {
-        selectAllCheckbox.addEventListener("change", (event) => {
-            const isChecked = event.target.checked;
-            const rowCheckboxes = document.querySelectorAll(
-                "#planTableBody .row-checkbox"
-            );
-            rowCheckboxes.forEach((checkbox) => {
-                checkbox.checked = isChecked;
-            });
-        });
-    }
-
-    planTableBody.addEventListener("change", (event) => {
-        if (event.target.classList.contains("row-checkbox")) {
-            updateSelectAllCheckboxState();
-        }
-    });
-
-    function updateSelectAllCheckboxState() {
-        const rowCheckboxes = document.querySelectorAll(
-            "#planTableBody .row-checkbox"
-        );
-        const checkedCheckboxes = document.querySelectorAll(
-            "#planTableBody .row-checkbox:checked"
-        );
-
-        if (rowCheckboxes.length === 0) {
-            selectAllCheckbox.checked = false;
-            selectAllCheckbox.indeterminate = false;
-        } else if (checkedCheckboxes.length === rowCheckboxes.length) {
-            selectAllCheckbox.checked = true;
-            selectAllCheckbox.indeterminate = false;
-        } else if (checkedCheckboxes.length > 0) {
-            selectAllCheckbox.checked = false;
-            selectAllCheckbox.indeterminate = true;
-        } else {
-            selectAllCheckbox.checked = false;
-            selectAllCheckbox.indeterminate = false;
-        }
-    }
-
-    if (deleteSelectedPlansBtn) {
-        deleteSelectedPlansBtn.addEventListener("click", async () => {
-            const selectedPlanIds = Array.from(
-                document.querySelectorAll("#planTableBody .row-checkbox:checked")
-            ).map((cb) => cb.dataset.planId);
-
-            if (selectedPlanIds.length === 0) {
-                alert("삭제할 요금제를 선택해주세요.");
-                return;
-            }
-
-            if (
-                confirm(`${selectedPlanIds.length}개의 요금제를 정말로 삭제하시겠습니까?`)
-            ) {
-                try {
-                    const deletePromises = selectedPlanIds.map((id) =>
-                        fetch(`${BASE_URL}/${id}`, {
-                            method: "DELETE",
-                            headers: {
-                                Authorization: `Bearer ${accessToken}`,
-                            },
-                        }).then((response) => {
-                            if (!response.ok) {
-                                return response.json().then((errorData) => {
-                                    throw new Error(
-                                        `요금제 ${id} 삭제 실패: ${errorData.message || response.statusText
-                                        }`
-                                    );
-                                });
-                            }
-                            return response;
-                        })
-                    );
-
-                    await Promise.all(deletePromises);
-                    alert(`${selectedPlanIds.length}개의 요금제가 성공적으로 삭제되었습니다.`);
-                    if (selectAllCheckbox) {
-                        selectAllCheckbox.checked = false;
-                    }
-                    const currentSearchTerm = planSearchInput.value.trim();
-                    if (
-                        currentFilters.category.length > 0 ||
-                        currentFilters.monthlyFee.length > 0 ||
-                        currentFilters.dataAllowance.length > 0 ||
-                        currentFilters.benefits.length > 0
-                    ) {
-                        fetchAndRenderPlans(currentSearchTerm, currentFilters);
-                    } else if (currentSearchTerm) {
-                        fetchAndRenderPlans(currentSearchTerm, null);
-                    } else {
-                        fetchAndRenderPlans(null, null);
-                    }
-                } catch (error) {
-                    console.error("일괄 삭제 중 오류 발생:", error);
-                    alert(`요금제 삭제 중 오류 발생: ${error.message}`);
-                }
-            }
-        });
-    }
-
-    // ----------------------------------------------------
-    // 필터 모달 관련 JavaScript 로직
-    // ----------------------------------------------------
-
-    if (planFilterBtn) {
-        planFilterBtn.addEventListener("click", () => {
-            filterPopup.classList.add("active");
-            initializeFilterPopup();
-
-            document.querySelectorAll(".filter-tag-group .filter-tag-btn").forEach(btn => {
-                btn.removeEventListener("click", toggleTagHandler);
-                btn.addEventListener("click", toggleTagHandler);
-            });
-
-            document.querySelectorAll(".benefit-card").forEach(card => {
-                card.removeEventListener("click", benefitCardClickHandler);
-                card.addEventListener("click", benefitCardClickHandler);
-            });
-        });
-    }
-
-    window.closeFilterPopup = function () {
-        filterPopup.classList.remove("active");
-    };
-
-    filterPopup.addEventListener("click", (e) => {
-        if (e.target === filterPopup) {
-            closeFilterPopup();
-        }
-    });
-
-    function initializeFilterPopup() {
-        document.querySelectorAll(".filter-tag-btn").forEach(btn => {
-            btn.classList.remove("selected");
-        });
-        document.querySelectorAll(".benefit-card").forEach(card => {
-            card.classList.remove("selected");
-        });
-
-        for (const type in currentFilters) {
-            if (type === "benefits") {
-                currentFilters.benefits.forEach(benefitId => {
-                    const card = document.querySelector(`.benefit-card[data-benefit-id="${benefitId}"]`);
-                    if (card) {
-                        card.classList.add("selected");
-                    }
-                });
-            } else {
-                const group = document.querySelector(`.filter-tag-group[data-filter-type="${type}"]`);
-                if (group) {
-                    if (currentFilters[type].length === 0) {
-                        const allTag = group.querySelector('.filter-tag-btn[data-value="all"]');
-                        if (allTag) allTag.classList.add("selected");
-                    } else {
-                        currentFilters[type].forEach(value => {
-                            const tag = group.querySelector(`.filter-tag-btn[data-value="${value}"]`);
-                            if (tag) tag.classList.add("selected");
-                        });
-                    }
-                }
-            }
-        }
-        renderSelectedFilters();
-    }
-
-
-    function toggleTag(clickedTag) {
-        const group = clickedTag.closest(".filter-tag-group");
-        const value = clickedTag.dataset.value;
-
-        if (value === "all") {
-            group.querySelectorAll(".filter-tag-btn").forEach(tag => {
-                tag.classList.remove("selected");
-            });
-            clickedTag.classList.add("selected");
-        } else {
-            const allTag = group.querySelector('.filter-tag-btn[data-value="all"]');
-            if (allTag) allTag.classList.remove("selected");
-
-            clickedTag.classList.toggle("selected");
-
-            const anyOtherTagSelected = Array.from(group.querySelectorAll('.filter-tag-btn:not([data-value="all"])')).some(tag => tag.classList.contains("selected"));
-            if (!anyOtherTagSelected && allTag) {
-                allTag.classList.add("selected");
-            }
-        }
-    }
-
-    function toggleTagHandler(event) {
-        toggleTag(event.currentTarget);
-    }
-
-    function benefitCardClickHandler(event) {
-        event.currentTarget.classList.toggle("selected");
-    }
-
-
+    /**
+     * 혜택 필터 카드 렌더링
+     */
     function renderBenefitFilterCards() {
-        benefitFilterContainer.innerHTML = "";
-        globalAllBenefits.forEach(benefit => {
-            const benefitCard = document.createElement("div");
-            benefitCard.classList.add("benefit-card");
-
-            if (benefit.benefitType === "BASIC") {
-                benefitCard.classList.add("basic");
-            } else if (benefit.benefitType === "PREMIUM") {
-                benefitCard.classList.add("premium");
-            } else if (benefit.benefitType === "MEDIA") {
-                benefitCard.classList.add("media");
-            }
-
-            benefitCard.dataset.benefitId = benefit.benefitId;
-            benefitCard.innerHTML = `
+        if (!elements.benefitFilterContainer) return;
+        
+        elements.benefitFilterContainer.innerHTML = '';
+        allBenefits.forEach(benefit => {
+            const card = document.createElement('div');
+            card.className = 'benefit-filter-card';
+            card.dataset.benefitId = benefit.benefitId;
+            
+            const typeClass = benefit.benefitType.toLowerCase();
+            card.classList.add(typeClass);
+            
+            card.innerHTML = `
                 <div class="benefit-card-name">${benefit.benefitName}</div>
                 <div class="benefit-card-price">${benefit.benefitPrice ? benefit.benefitPrice.toLocaleString() + '원' : '무료'}</div>
             `;
-            benefitFilterContainer.appendChild(benefitCard);
-        });
-    }
-
-    window.clearAllFilters = function () {
-        document.querySelectorAll(".filter-tag-group").forEach(group => {
-            group.querySelectorAll(".filter-tag-btn").forEach(tag => {
-                tag.classList.remove("selected");
+            
+            card.addEventListener('click', () => {
+                card.classList.toggle('selected');
             });
-            const allTag = group.querySelector('.filter-tag-btn[data-value="all"]');
-            if (allTag) allTag.classList.add("selected");
+            
+            elements.benefitFilterContainer.appendChild(card);
         });
-
-        document.querySelectorAll(".benefit-card").forEach(card => {
-            card.classList.remove("selected");
-        });
-
-        currentFilters.category = [];
-        currentFilters.monthlyFee = [];
-        currentFilters.dataAllowance = [];
-        currentFilters.benefits = [];
-
-        renderSelectedFilters();
-        const searchTerm = planSearchInput.value.trim();
-        if (searchTerm) {
-            fetchAndRenderPlans(searchTerm, null);
-        } else {
-            fetchAndRenderPlans(null, null);
-        }
-    };
-
-    window.applyFilter = function () {
-        currentFilters.category = getSelectedTagValues("planCategory");
-        currentFilters.monthlyFee = getSelectedTagValues("monthlyFee");
-        currentFilters.dataAllowance = getSelectedTagValues("dataAllowance");
-        currentFilters.benefits = getSelectedBenefitIds();
-
-        closeFilterPopup();
-        renderSelectedFilters();
-
-        const searchTerm = planSearchInput.value.trim();
-        fetchAndRenderPlans(searchTerm, currentFilters);
-    };
-
-    function getSelectedTagValues(filterType) {
-        const group = document.querySelector(`.filter-tag-group[data-filter-type="${filterType}"]`);
-        if (!group) return [];
-
-        const selectedTags = Array.from(group.querySelectorAll(".filter-tag-btn.selected"));
-
-        if (selectedTags.some(tag => tag.dataset.value === "all") || selectedTags.length === 0) {
-            return [];
-        }
-
-        return selectedTags
-            .filter(tag => tag.dataset.value !== "all")
-            .map(tag => tag.dataset.value);
     }
 
-    function getSelectedBenefitIds() {
-        const selectedBenefitCards = document.querySelectorAll(".benefit-card.selected");
-        return Array.from(selectedBenefitCards).map(card => parseInt(card.dataset.benefitId));
-    }
-
-
+    /**
+     * 선택된 필터 렌더링
+     */
     function renderSelectedFilters() {
-        selectedFiltersContainer.innerHTML = "";
-
-        currentFilters.category.forEach(value => {
-            addSelectedFilterTag(value, "category");
-        });
-
-        currentFilters.monthlyFee.forEach(value => {
-            addSelectedFilterTag(value, "monthlyFee");
-        });
-
-        currentFilters.dataAllowance.forEach(value => {
-            addSelectedFilterTag(value, "dataAllowance");
-        });
-
-        currentFilters.benefits.forEach(benefitId => {
-            const benefit = globalAllBenefits.find(b => b.benefitId === benefitId);
-            if (benefit) {
-                addSelectedFilterTag(benefit.benefitName, "benefit", benefitId);
-            }
+        if (!elements.selectedFilters) return;
+        
+        elements.selectedFilters.innerHTML = '';
+        
+        // 각 필터 타입별로 태그 추가
+        Object.entries(currentFilters).forEach(([filterType, values]) => {
+            values.forEach(value => {
+                if (filterType === 'benefits') {
+                    const benefit = allBenefits.find(b => b.benefitId === value);
+                    if (benefit) {
+                        addSelectedFilterTag(benefit.benefitName, filterType, value);
+                    }
+                } else {
+                    addSelectedFilterTag(value, filterType);
+                }
+            });
         });
     }
 
-    function addSelectedFilterTag(displayValue, filterType, id = null) {
-        const tag = document.createElement("span");
-        tag.classList.add("selected-filter-tag");
+    /**
+     * 선택된 필터 태그 추가
+     */
+    function addSelectedFilterTag(displayValue, filterType, value = null) {
+        const tag = document.createElement('span');
+        tag.className = 'selected-filter-tag';
         tag.innerHTML = `
             ${displayValue}
-            <button type="button" class="remove-tag-btn" data-filter-type="${filterType}" data-value="${displayValue}" ${id ? `data-id="${id}"` : ''}>&times;</button>
+            <button type="button" class="remove-btn" data-filter-type="${filterType}" data-value="${value || displayValue}">
+                &times;
+            </button>
         `;
-        selectedFiltersContainer.appendChild(tag);
+        
+        const removeBtn = tag.querySelector('.remove-btn');
+        removeBtn.addEventListener('click', () => {
+            removeFilter(filterType, value || displayValue);
+        });
+        
+        elements.selectedFilters.appendChild(tag);
+    }
 
-        tag.querySelector(".remove-tag-btn").addEventListener("click", (event) => {
-            const typeToRemove = event.target.dataset.filterType;
-            const valueToRemove = event.target.dataset.value;
-            const idToRemove = event.target.dataset.id ? parseInt(event.target.dataset.id) : null;
+    // --- 유틸리티 함수들 ---
+    
+    /**
+     * 필터 제거
+     */
+    function removeFilter(filterType, value) {
+        if (filterType === 'benefits') {
+            currentFilters.benefits = currentFilters.benefits.filter(id => id !== parseInt(value));
+        } else {
+            currentFilters[filterType] = currentFilters[filterType].filter(v => v !== value);
+        }
+        
+        renderSelectedFilters();
+        fetchPlans(currentSearchValue, currentFilters, false);
+    }
 
-            if (typeToRemove === "benefit" && idToRemove !== null) {
-                currentFilters.benefits = currentFilters.benefits.filter(id => id !== idToRemove);
-            } else {
-                currentFilters[typeToRemove] = currentFilters[typeToRemove].filter(val => val !== valueToRemove);
-            }
-
-            if (typeToRemove === "benefit" && idToRemove !== null) {
-                const card = document.querySelector(`.benefit-card[data-benefit-id="${idToRemove}"]`);
-                if (card) card.classList.remove("selected");
-            } else {
-                const group = document.querySelector(`.filter-tag-group[data-filter-type="${typeToRemove}"]`);
-                if (group) {
-                    const tagBtn = group.querySelector(`.filter-tag-btn[data-value="${valueToRemove}"]`);
-                    if (tagBtn) tagBtn.classList.remove("selected");
-
-                    const anyOtherTagSelected = Array.from(group.querySelectorAll('.filter-tag-btn:not([data-value="all"])')).some(t => t.classList.contains("selected"));
-                    const allTag = group.querySelector('.filter-tag-btn[data-value="all"]');
-                    if (!anyOtherTagSelected && allTag) {
-                        allTag.classList.add("selected");
-                    }
-                }
-            }
-
-            renderSelectedFilters();
-            const searchTerm = planSearchInput.value.trim();
-            if (
-                currentFilters.category.length > 0 ||
-                currentFilters.monthlyFee.length > 0 ||
-                currentFilters.dataAllowance.length > 0 ||
-                currentFilters.benefits.length > 0
-            ) {
-                fetchAndRenderPlans(searchTerm, currentFilters);
-            } else if (searchTerm) {
-                fetchAndRenderPlans(searchTerm, null);
-            } else {
-                fetchAndRenderPlans(null, null);
+    // --- 전역 이벤트 핸들러 ---
+    
+    /**
+     * 요금제 수정 핸들러
+     */
+    window.handleEditPlan = async function(planId) {
+        const planData = await fetchPlanDetails(planId);
+        if (!planData) return;
+        
+        currentModalMode = 'edit';
+        currentEditingPlanId = planId;
+        
+        // 모달 제목 변경
+        elements.modalTitle.innerHTML = '<i class="fas fa-edit"></i> 요금제 수정';
+        elements.modalSaveBtn.textContent = '수정';
+        
+        // 폼 데이터 설정
+        elements.modalPlanName.value = planData.planName || '';
+        elements.modalCategory.value = planData.planCategory || '';
+        elements.modalMonthlyFee.value = planData.monthlyFee || '';
+        
+        elements.modalDataAllowance.value = planData.dataAllowance === 99999 ? '' : (planData.dataAllowance || '');
+        elements.modalDataAllowanceUnit.value = planData.dataAllowanceUnit || 'GB';
+        elements.modalDataPeriod.value = planData.dataPeriod || 'MONTH';
+        
+        elements.modalVoiceAllowance.value = planData.voiceAllowance === 0 ? '' : (planData.voiceAllowance || '');
+        elements.modalAdditionalCallAllowance.value = planData.additionalCallAllowance || '';
+        
+        elements.modalTetheringDataAmount.value = planData.tetheringDataAmount || '';
+        elements.modalTetheringDataUnit.value = planData.tetheringDataUnit || 'GB';
+        elements.modalFamilyDataAmount.value = planData.familyDataAmount || '';
+        elements.modalFamilyDataUnit.value = planData.familyDataUnit || 'GB';
+        
+        // 혜택 데이터 설정
+        elements.basicBenefitList.innerHTML = '';
+        elements.premiumBenefitList.innerHTML = '';
+        elements.mediaBenefitList.innerHTML = '';
+        
+        const planBenefits = (planData.benefitIdList || [])
+            .map(benefitId => allBenefits.find(b => b.benefitId === benefitId))
+            .filter(Boolean);
+        
+        planBenefits.forEach(benefit => {
+            if (benefit.benefitType === 'BASIC') {
+                addBenefitItemToModal(elements.basicBenefitList, benefit.benefitId, benefit.benefitName, 'BASIC');
+            } else if (benefit.benefitType === 'PREMIUM') {
+                addBenefitItemToModal(elements.premiumBenefitList, benefit.benefitId, benefit.benefitName, 'PREMIUM');
+            } else if (benefit.benefitType === 'MEDIA') {
+                addBenefitItemToModal(elements.mediaBenefitList, benefit.benefitId, benefit.benefitName, 'MEDIA');
             }
         });
+        
+        // 모달 표시
+        window.AdminCommon.showModal(elements.planModal);
+    };
+
+    /**
+     * 폼 데이터 수집
+     */
+    function collectFormData() {
+        const formData = {
+            planName: elements.modalPlanName.value.trim(),
+            planCategory: elements.modalCategory.value.trim(),
+            monthlyFee: parseFloat(elements.modalMonthlyFee.value) || 0,
+            
+            dataAllowance: elements.modalDataAllowance.value.trim() === '' || 
+                          elements.modalDataAllowance.value.trim() === '무제한' ? 
+                          99999 : parseFloat(elements.modalDataAllowance.value) || 0,
+            dataAllowanceUnit: elements.modalDataAllowanceUnit.value.trim(),
+            dataPeriod: elements.modalDataPeriod.value.trim(),
+            
+            voiceAllowance: elements.modalVoiceAllowance.value.trim() === '' || 
+                           elements.modalVoiceAllowance.value.trim() === '무제한' ? 
+                           0 : parseFloat(elements.modalVoiceAllowance.value) || 0,
+            additionalCallAllowance: elements.modalAdditionalCallAllowance.value.trim() === '' ? 
+                                   null : parseFloat(elements.modalAdditionalCallAllowance.value),
+            
+            tetheringDataAmount: elements.modalTetheringDataAmount.value.trim() === '' ? 
+                               null : parseFloat(elements.modalTetheringDataAmount.value),
+            tetheringDataUnit: elements.modalTetheringDataUnit.value.trim(),
+            familyDataAmount: elements.modalFamilyDataAmount.value.trim() === '' ? 
+                            null : parseFloat(elements.modalFamilyDataAmount.value),
+            familyDataUnit: elements.modalFamilyDataUnit.value.trim(),
+            
+            benefitIdList: []
+        };
+        
+        // 선택된 혜택 ID 수집
+        ['basicBenefitList', 'premiumBenefitList', 'mediaBenefitList'].forEach(listId => {
+            const listElement = document.getElementById(listId);
+            Array.from(listElement.children).forEach(item => {
+                formData.benefitIdList.push(parseInt(item.dataset.benefitId));
+            });
+        });
+        
+        // 수정 모드인 경우 planStatus 추가
+        if (currentModalMode === 'edit') {
+            const currentPlan = allPlans.find(p => p.planId === currentEditingPlanId);
+            formData.planStatus = currentPlan ? currentPlan.planStatus : 'USE';
+        } else {
+            formData.planStatus = 'USE';
+        }
+        
+        return formData;
     }
+
+    /**
+     * 폼 유효성 검사
+     */
+    function validateForm(formData) {
+        if (!formData.planName) {
+            alert('요금제 이름을 입력해주세요.');
+            elements.modalPlanName.focus();
+            return false;
+        }
+        
+        if (!formData.planCategory) {
+            alert('카테고리를 입력해주세요.');
+            elements.modalCategory.focus();
+            return false;
+        }
+        
+        if (!formData.monthlyFee || formData.monthlyFee <= 0) {
+            alert('월정액을 올바르게 입력해주세요.');
+            elements.modalMonthlyFee.focus();
+            return false;
+        }
+        
+        return true;
+    }
+
+    // --- 이벤트 리스너 설정 ---
+    
+    // 검색 이벤트
+    elements.searchBtn.addEventListener('click', () => {
+        fetchPlans(elements.searchInput.value.trim(), currentFilters, false);
+    });
+    
+    window.AdminCommon.setupEnterKey(elements.searchInput, () => elements.searchBtn.click());
+    
+    // 실시간 검색 (입력하면서 바로 검색)
+    window.AdminCommon.setupSearchInput(elements.searchInput, (searchValue) => {
+        fetchPlans(searchValue, currentFilters, false);
+    }, 300); // 300ms 디바운스
+    
+    // 신규 등록 버튼 이벤트
+    elements.addNewPlanBtn.addEventListener('click', () => {
+        currentModalMode = 'add';
+        currentEditingPlanId = null;
+        
+        // 모달 초기화
+        elements.modalTitle.innerHTML = '<i class="fas fa-plus"></i> 새 요금제 등록';
+        elements.modalSaveBtn.textContent = '등록';
+        
+        // 폼 초기화
+        elements.planForm.reset();
+        elements.basicBenefitList.innerHTML = '';
+        elements.premiumBenefitList.innerHTML = '';
+        elements.mediaBenefitList.innerHTML = '';
+        
+        window.AdminCommon.showModal(elements.planModal);
+        elements.modalPlanName.focus();
+    });
+    
+    // 모달 저장 버튼 이벤트
+    elements.modalSaveBtn.addEventListener('click', async () => {
+        const formData = collectFormData();
+        
+        if (!validateForm(formData)) return;
+        
+        let success = false;
+        
+        if (currentModalMode === 'add') {
+            success = await createPlan(formData);
+        } else {
+            success = await updatePlan(currentEditingPlanId, formData);
+        }
+        
+        if (success) {
+            window.AdminCommon.hideModal(elements.planModal);
+            fetchPlans(currentSearchValue, currentFilters, true);
+        }
+    });
+    
+    // 모달 이벤트 설정
+    window.AdminCommon.setupModalEvents(elements.planModal, [
+        elements.modalCloseBtn,
+        elements.modalCancelBtn
+    ]);
+    
+    // 필터 버튼 이벤트
+    elements.filterBtn.addEventListener('click', () => {
+        initializeFilterModal();
+        window.AdminCommon.showModal(elements.filterModal);
+    });
+    
+    // 필터 모달 이벤트
+    window.AdminCommon.setupModalEvents(elements.filterModal, [
+        elements.filterModalCloseBtn
+    ]);
+    
+    // 필터 적용 버튼 이벤트
+    elements.applyFiltersBtn.addEventListener('click', () => {
+        applyFilters();
+        window.AdminCommon.hideModal(elements.filterModal);
+    });
+    
+    // 필터 전체 해제 버튼 이벤트
+    elements.clearFiltersBtn.addEventListener('click', () => {
+        clearAllFilters();
+    });
+
+    // --- 필터 관련 함수들 ---
+    
+    /**
+     * 필터 모달 초기화
+     */
+    function initializeFilterModal() {
+        // 모든 필터 태그 초기화
+        document.querySelectorAll('.filter-tag').forEach(tag => {
+            tag.classList.remove('selected');
+        });
+        
+        // 모든 혜택 카드 초기화
+        document.querySelectorAll('.benefit-filter-card').forEach(card => {
+            card.classList.remove('selected');
+        });
+        
+        // 현재 필터 상태 반영
+        Object.entries(currentFilters).forEach(([filterType, values]) => {
+            if (filterType === 'benefits') {
+                values.forEach(benefitId => {
+                    const card = document.querySelector(`[data-benefit-id="${benefitId}"]`);
+                    if (card) card.classList.add('selected');
+                });
+            } else {
+                values.forEach(value => {
+                    const tag = document.querySelector(`[data-filter-type="${filterType}"] [data-value="${value}"]`);
+                    if (tag) tag.classList.add('selected');
+                });
+            }
+        });
+        
+        // 전체 태그 처리
+        Object.keys(currentFilters).forEach(filterType => {
+            if (filterType !== 'benefits' && currentFilters[filterType].length === 0) {
+                const allTag = document.querySelector(`[data-filter-type="${filterType}"] [data-value="all"]`);
+                if (allTag) allTag.classList.add('selected');
+            }
+        });
+        
+    // in initializeFilterModal() ...
+        // 이벤트 리스너 설정
+        document.querySelectorAll('.filter-tag').forEach(tag => {
+            // 기존 리스너를 먼저 제거하여 중복 등록을 방지합니다.
+            tag.removeEventListener('click', toggleFilterTag);
+            tag.addEventListener('click', toggleFilterTag);
+        });
+    }
+    
+    /**
+     * 필터 태그 토글
+     */
+        function toggleFilterTag(event) { // 인자를 이벤트 객체로 받도록 변경
+            const clickedTag = event.currentTarget; // 클릭된 요소를 event.currentTarget으로 가져옴
+            const group = clickedTag.closest('.filter-tag-group');
+            const value = clickedTag.dataset.value;
+        
+        if (value === 'all') {
+            // 전체 선택
+            group.querySelectorAll('.filter-tag').forEach(tag => {
+                tag.classList.remove('selected');
+            });
+            clickedTag.classList.add('selected');
+        } else {
+            // 개별 선택
+            const allTag = group.querySelector('[data-value="all"]');
+            if (allTag) allTag.classList.remove('selected');
+            
+            clickedTag.classList.toggle('selected');
+            
+            // 아무것도 선택되지 않았으면 전체 선택
+            const hasSelection = group.querySelectorAll('.filter-tag.selected:not([data-value="all"])').length > 0;
+            if (!hasSelection && allTag) {
+                allTag.classList.add('selected');
+            }
+        }
+    }
+    
+        /**
+     * ✅ [수정] 필터 적용 함수
+     * - newFilters 객체에 존재하지 않는 filterType에 대한 예외 처리 추가
+     */
+    function applyFilters() {
+        const newFilters = { category: [], monthlyFee: [], dataAllowance: [], benefits: [] };
+        
+        document.querySelectorAll('.filter-tag-group').forEach(group => {
+            const filterType = group.dataset.filterType;
+
+            // --- 여기부터 수정 ---
+            // newFilters 객체에 해당 filterType이 배열로 존재하는지 확인
+            if (newFilters[filterType] && Array.isArray(newFilters[filterType])) {
+                group.querySelectorAll('.filter-tag.selected:not([data-value="all"])').forEach(tag => {
+                    newFilters[filterType].push(tag.dataset.value);
+                });
+            }
+            // --- 여기까지 수정 ---
+        });
+        
+        document.querySelectorAll('.benefit-filter-card.selected').forEach(card => {
+            newFilters.benefits.push(parseInt(card.dataset.benefitId));
+        });
+        
+        currentFilters = newFilters;
+        renderSelectedFilters();
+        
+        updateSearchInput('');
+        fetchPlans('', currentFilters);
+    }
+    
+    /**
+     * 모든 필터 해제
+     */
+    function clearAllFilters() {
+        // 모든 필터 태그 해제
+        document.querySelectorAll('.filter-tag').forEach(tag => {
+            tag.classList.remove('selected');
+        });
+        
+        // 모든 전체 태그 선택
+        document.querySelectorAll('[data-value="all"]').forEach(tag => {
+            tag.classList.add('selected');
+        });
+        
+        // 모든 혜택 카드 해제
+        document.querySelectorAll('.benefit-filter-card').forEach(card => {
+            card.classList.remove('selected');
+        });
+        
+        // 필터 상태 초기화
+        currentFilters = { category: [], monthlyFee: [], dataAllowance: [], benefits: [] };
+        
+        // 선택된 필터 표시 업데이트
+        renderSelectedFilters();
+        
+        // 필터 적용
+        fetchPlans(currentSearchValue, currentFilters, false);
+    }
+
+    // --- 초기화 ---
+    
+    /**
+     * 페이지 초기화
+     */
+    async function initialize() {
+        console.log('요금제 관리 페이지 초기화 시작');
+        
+        try {
+            // 혜택 목록 먼저 로드
+            await fetchBenefits();
+            
+            // 초기 데이터 로드
+            await fetchPlans('', null, true);
+            
+            console.log('요금제 관리 페이지 초기화 완료');
+        } catch (error) {
+            console.error('페이지 초기화 오류:', error);
+            alert('페이지 초기화 중 오류가 발생했습니다.');
+        }
+    }
+
+    // 페이지 초기화 실행
+    initialize();
 });

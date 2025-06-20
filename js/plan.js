@@ -292,6 +292,15 @@ function updateUserDisplay(userName, userEmail = null) {
   }
 }
 
+// 챗봇 페이지로 이동
+function goToChatbot() {
+  // 부드러운 페이지 전환 효과
+  document.body.style.opacity = '0.8';
+  setTimeout(() => {
+    window.location.href = '/page/chatbot';
+  }, 300);
+}
+
 // 프로필 팝업 열기
 function openProfilePopup() {
   const popup = document.getElementById('profilePopup');
@@ -529,7 +538,7 @@ function updateBenefitsInFilter() {
         '애플뮤직': '#000000',
         '스포티파이': '#1ed760'
       };
-      return colorMap[benefitName] || '#f06292';
+      return colorMap[benefitName] || '#adb5bd';
     };
 
     // 혜택 이름의 첫 글자 추출
@@ -554,7 +563,7 @@ function updateBenefitsInFilter() {
   console.log('혜택 필터 섹션이 업데이트되었습니다.');
 }
 
-// 요금제 카드 화면에 표시 - 요기U+ 스타일
+// 요금제 카드 화면에 표시 - 다크 테마 + 푸터 고정
 function displayPricingCards(pricingData) {
   const pricingCardsContainer = document.querySelector('.pricing-cards');
 
@@ -563,7 +572,7 @@ function displayPricingCards(pricingData) {
       <div class="loading-state">
         <div class="loading-icon">😔</div>
         <p>해당 조건에 맞는 요금제가 없습니다.</p>
-        <p style="font-size: 14px; color: #999; margin-top: 8px;">다른 조건으로 검색해보세요</p>
+        <p style="font-size: 14px; color: #6c757d; margin-top: 8px;">다른 조건으로 검색해보세요</p>
       </div>
     `;
     return;
@@ -602,7 +611,7 @@ function displayPricingCards(pricingData) {
       return new Intl.NumberFormat('ko-KR').format(price);
     };
 
-    // 카테고리 태그 색상 - 요기U+ 스타일
+    // 카테고리 태그 색상
     const getCategoryTagStyle = (categoryName) => {
       const tagStyles = {
         '프리미엄': { bg: 'linear-gradient(135deg, #ff6b35 0%, #ff8c42 100%)', text: '#fff' },
@@ -615,7 +624,7 @@ function displayPricingCards(pricingData) {
         '키즈': { bg: 'linear-gradient(135deg, #e91e63 0%, #ec407a 100%)', text: '#fff' }
       };
 
-      return tagStyles[categoryName] || { bg: 'linear-gradient(135deg, #f06292 0%, #e91e63 100%)', text: '#fff' };
+      return tagStyles[categoryName] || { bg: 'linear-gradient(135deg, #6c757d 0%, #495057 100%)', text: '#fff' };
     };
 
     // 특이사항 표시
@@ -694,7 +703,14 @@ function displayPricingCards(pricingData) {
                   ${benefitsList.map(benefit => `<span class="benefit-item">${benefit}</span>`).join('')}
                 </div>
               </div>
-            ` : ''}
+            ` : `
+              <div class="benefits-list">
+                <div class="benefits-title">🎁 혜택</div>
+                <div class="benefits-items">
+                  <span class="benefit-item">기본 서비스</span>
+                </div>
+              </div>
+            `}
           </div>
           
           <div class="plan-actions">
@@ -1018,10 +1034,10 @@ function showToast(message, type = 'info') {
   toast.className = `toast toast-${type}`;
   
   const colors = {
-    info: '#f06292',
-    success: '#4caf50',
-    warning: '#ff9800',
-    error: '#f44336'
+    info: '#ad1457',
+    success: '#28a745',
+    warning: '#ffc107',
+    error: '#dc3545'
   };
 
   toast.style.cssText = `
@@ -1088,32 +1104,33 @@ function showConfirmModal(title, message, confirmText = '확인', cancelText = '
 
     modal.innerHTML = `
       <div style="
-        background: white;
+        background: #343a40;
         border-radius: 20px;
         padding: 32px;
         max-width: 400px;
         width: 90%;
         text-align: center;
         font-family: 'Pretendard-Regular', sans-serif;
-        box-shadow: 0 20px 60px rgba(236, 0, 140, 0.2);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        border: 1px solid #6c757d;
       ">
         <h3 style="
           font-family: 'Pretendard-Bold', sans-serif;
-          color: #333;
+          color: #f8f9fa;
           margin-bottom: 16px;
           font-size: 18px;
         ">${title}</h3>
         <p style="
-          color: #666;
+          color: #adb5bd;
           margin-bottom: 24px;
           line-height: 1.5;
         ">${message}</p>
         <div style="display: flex; gap: 12px; justify-content: center;">
           <button class="cancel-btn" style="
             padding: 12px 24px;
-            border: 2px solid #ddd;
-            background: white;
-            color: #666;
+            border: 2px solid #6c757d;
+            background: #343a40;
+            color: #adb5bd;
             border-radius: 999px;
             cursor: pointer;
             font-family: 'Pretendard-Medium', sans-serif;
@@ -1122,13 +1139,13 @@ function showConfirmModal(title, message, confirmText = '확인', cancelText = '
           <button class="confirm-btn" style="
             padding: 12px 24px;
             border: none;
-            background: linear-gradient(135deg, #f06292 0%, #e91e63 100%);
+            background: linear-gradient(135deg, #ad1457 0%, #880e4f 100%);
             color: white;
             border-radius: 999px;
             cursor: pointer;
             font-family: 'Pretendard-Medium', sans-serif;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 12px rgba(240, 98, 146, 0.3);
+            box-shadow: 0 4px 12px rgba(173, 20, 87, 0.4);
           ">${confirmText}</button>
         </div>
       </div>
@@ -1194,57 +1211,3 @@ document.addEventListener('DOMContentLoaded', function () {
     loadBenefitsData();
   }, 1500);
 });
-
-// 사용자 정보 로드 함수
-async function loadUserInfo() {
-  try {
-    if (!accessToken) {
-      document.getElementById('userInfo').textContent = '로그인 필요';
-      document.getElementById('userAvatar').textContent = '?';
-      return;
-    }
-
-    // 사용자 정보 API 호출 (예시)
-    const response = await fetch('https://www.visiblego.com/auth/user', {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      }
-    });
-
-    if (response.ok) {
-      const userData = await response.json();
-      
-      // 사용자 이름 표시
-      const userName = userData.name || userData.email || '사용자님';
-      document.getElementById('userInfo').textContent = userName;
-      
-      // 이메일 약자로 아바타 표시
-      if (userData.email) {
-        const emailInitial = userData.email.charAt(0).toUpperCase();
-        document.getElementById('userAvatar').textContent = emailInitial;
-      }
-      
-    } else {
-      // API 호출 실패 시 기본값 표시
-      document.getElementById('userInfo').textContent = '사용자님';
-      document.getElementById('userAvatar').textContent = '👤';
-    }
-    
-  } catch (error) {
-    console.error('사용자 정보 로드 중 오류 발생:', error);
-    // 에러 발생 시 기본값 표시
-    document.getElementById('userInfo').textContent = '사용자님';
-    document.getElementById('userAvatar').textContent = '👤';
-  }
-}
-
-// 챗봇 페이지로 이동
-function goToChatbot() {
-  // 부드러운 페이지 전환 효과
-  document.body.style.opacity = '0.8';
-  setTimeout(() => {
-    window.location.href = '/page/chatbot';
-  }, 300);
-}

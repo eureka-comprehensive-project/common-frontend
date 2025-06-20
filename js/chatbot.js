@@ -44,13 +44,13 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // 전역 클릭 이벤트로 드롭다운 닫기
+    // 전역 클릭 이벤트로 프로필 팝업 닫기
     document.addEventListener('click', function (event) {
-        const profileDropdown = document.getElementById('profileDropdown');
-        const userProfile = document.querySelector('.user-profile');
+        const profilePopup = document.getElementById('profilePopup');
+        const profile = document.querySelector('.sidebar-profile');
 
-        if (profileDropdown && !userProfile.contains(event.target)) {
-            profileDropdown.classList.remove('show');
+        if (profilePopup && profile && !profile.contains(event.target) && profilePopup.style.display === 'block') {
+            closeProfilePopup();
         }
     });
 });
@@ -138,12 +138,19 @@ function updateUserProfileDisplay(name) {
     if (userProfileNameElement && name) {
         userProfileNameElement.textContent = name;
     }
+
+    // 아바타에 이메일 첫 글자 표시
+    const userAvatar = document.getElementById('userAvatar');
+    if (userAvatar && name) {
+        const emailInitial = name.charAt(0).toUpperCase();
+        userAvatar.textContent = emailInitial;
+    }
 }
 
 function updateChatHeader(title) {
-    const chatHeader = document.querySelector('.chat-main .chat-header');
-    if (chatHeader) {
-        chatHeader.textContent = title;
+    const chatTitle = document.getElementById('chatTitle');
+    if (chatTitle) {
+        chatTitle.textContent = title;
     }
 }
 
@@ -396,14 +403,20 @@ async function loadChatContent(chatId) {
                         const { intro, plans } = parseTextPlans(messageContent);
                         renderTextPlanCards(intro, plans, false, false);
                     } else {
-                        addMessageToChat('bot', msg.content, msg.timestamp);
+                        addMessageToChat('bot', msg.content, msg.timestamp, true); // 애니메이션 없음
                     }
                 } else {
-                    addMessageToChat('user', msg.content, msg.timestamp);
+                    addMessageToChat('user', msg.content, msg.timestamp, true); // 애니메이션 없음
                 }
             });
 
-            chatContent.scrollTop = chatContent.scrollHeight;
+            // 히스토리 로드 후 맨 아래로 스크롤 (부드럽게)
+            setTimeout(() => {
+                chatContent.scrollTo({
+                    top: chatContent.scrollHeight,
+                    behavior: 'smooth'
+                });
+            }, 100);
         } else {
             addMessageToChat('system', '이전 대화 내용이 없습니다.');
             if(chatRoomStates[currentChatId]) chatRoomStates[currentChatId].allHistoryLoaded = true;
@@ -515,7 +528,6 @@ async function loadMoreChatContent() {
         if (chatRoomStates[currentChatId]) chatRoomStates[currentChatId].isLoadingMoreMessages = false;
     }
 }
-
 
 // 새 채팅 생성
 function createNewChat() {
@@ -730,7 +742,7 @@ function setMessageFromSTT(message) {
 }
 
 // 채팅에 메시지 추가
-function addMessageToChat(sender, message, timestamp) {
+function addMessageToChat(sender, message, timestamp, noAnimation = false) {
     const chatContent = document.getElementById('chatContent');
 
     if (sender === 'system') {
@@ -748,6 +760,11 @@ function addMessageToChat(sender, message, timestamp) {
 
     const messageElement = document.createElement('div');
     messageElement.className = `message ${sender}`;
+    
+    // 애니메이션 제어
+    if (noAnimation) {
+        messageElement.classList.add('no-animation');
+    }
 
     const messageId = 'msg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
     messageElement.id = messageId;
@@ -767,9 +784,25 @@ function addMessageToChat(sender, message, timestamp) {
     }
 
     chatContent.appendChild(messageElement);
-    chatContent.scrollTop = chatContent.scrollHeight;
+    
+    // 부드러운 스크롤로 최하단 이동 (새 메시지일 때만)
+    if (!noAnimation) {
+        smoothScrollToBottom();
+    }
 
     return messageId;
+}
+
+// 부드러운 스크롤 함수
+function smoothScrollToBottom() {
+    const chatContent = document.getElementById('chatContent');
+    // 애니메이션이 시작된 후 스크롤
+    setTimeout(() => {
+        chatContent.scrollTo({
+            top: chatContent.scrollHeight,
+            behavior: 'smooth'
+        });
+    }, 100);
 }
 
 // 채팅에 메시지 앞에 추가 (이전 대화 로드용)
@@ -777,7 +810,7 @@ function prependMessageToChat(sender, message, timestamp) {
     const chatContent = document.getElementById('chatContent');
 
     const messageElement = document.createElement('div');
-    messageElement.className = `message ${sender}`;
+    messageElement.className = `message ${sender} no-animation`; // 애니메이션 없음
 
     const messageBubble = document.createElement('div');
     messageBubble.className = 'message-bubble';
@@ -929,7 +962,7 @@ function toggleSTT() {
 function stopRecognition() {
     isRecognizing = false;
     const button = document.querySelector('.mic-button');
-    button.innerHTML = "🎤";
+    button.innerHTML = "🎙️";
 }
 
 // 키보드 이벤트 처리
@@ -944,29 +977,31 @@ function startRecording() {
     toggleSTT();
 }
 
-// 프로필 메뉴 토글
+// 프로필 메뉴 토글 (plan과 동일)
 function toggleProfileMenu() {
-    const dropdown = document.getElementById('profileDropdown');
-    dropdown.classList.toggle('show');
+    const popup = document.getElementById('profilePopup');
+    popup.style.display = popup.style.display === 'block' ? 'none' : 'block';
+}
+
+// 프로필 팝업 닫기
+function closeProfilePopup() {
+    const popup = document.getElementById('profilePopup');
+    popup.style.display = 'none';
 }
 
 // 마이페이지로 이동
 function goToMyPage(event) {
     event.stopPropagation();
-    const dropdown = document.getElementById('profileDropdown');
-    dropdown.classList.remove('show');
-
+    closeProfilePopup();
+    
     window.location.href = '/page/mypage';
 }
 
 // 로그아웃
 function logout(event) {
     event.stopPropagation();
-    const dropdown = document.getElementById('profileDropdown');
-    if (dropdown) {
-        dropdown.classList.remove('show');
-    }
-
+    closeProfilePopup();
+    
     showLogoutModal();
 }
 
@@ -1201,6 +1236,12 @@ function renderTextPlanCards(intro, plans, prepend = false, showFeedback = false
     const chatContent = document.getElementById('chatContent');
     const cardsContainer = document.createElement('div');
     cardsContainer.className = 'message bot';
+    
+    // 애니메이션 제어
+    if (prepend) {
+        cardsContainer.classList.add('no-animation');
+    }
+    
     let cardsHTML = `<div class="message-bubble">`;
 
     if (intro) {
@@ -1252,7 +1293,7 @@ function renderTextPlanCards(intro, plans, prepend = false, showFeedback = false
             chatContent.innerHTML = '';
         }
         chatContent.appendChild(cardsContainer);
-        chatContent.scrollTop = chatContent.scrollHeight;
+        smoothScrollToBottom();
     }
 };
 
@@ -1271,6 +1312,12 @@ function renderDtoPlanCards(intro, plans, prepend = false) {
     const chatContent = document.getElementById('chatContent');
     const cardsContainer = document.createElement('div');
     cardsContainer.className = 'message bot';
+    
+    // 애니메이션 제어
+    if (prepend) {
+        cardsContainer.classList.add('no-animation');
+    }
+    
     let cardsHTML = `<div class="message-bubble">`;
     
     if (intro) {
@@ -1355,6 +1402,6 @@ function renderDtoPlanCards(intro, plans, prepend = false) {
             chatContent.innerHTML = '';
         }
         chatContent.appendChild(cardsContainer);
-        chatContent.scrollTop = chatContent.scrollHeight;
+        smoothScrollToBottom();
     }
 }

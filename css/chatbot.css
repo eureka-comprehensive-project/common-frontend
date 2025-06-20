@@ -478,6 +478,9 @@ background-color: #e0e0e0;
     width: 220px; /* 카드의 너비 */
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
 }
 
 .plan-card:hover {
@@ -506,6 +509,10 @@ background-color: #e0e0e0;
     font-weight: 600;
     color: #555;
     margin-right: 6px;
+}
+
+.plan-card-body {
+    flex-grow: 1;
 }
 
 /* 추천 요금제 피드백 UI */
@@ -632,4 +639,63 @@ background-color: #e0e0e0;
     font-size: 12px; 
     color: #888; 
     flex-shrink: 0; 
+};
+
+/* ================================== */
+/* [MODIFIED] 부가 혜택 스타일        */
+/* ================================== */
+.plan-benefits {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #f0f0f0;
+}
+
+.benefits-title {
+    font-weight: 600;
+    font-size: 14px;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.benefits-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 8px; /* 세로 간격, 가로 간격 */
+}
+
+.benefit-tag {
+    background-color: #fff0f6; /* U+ 스타일의 연한 핑크 배경 */
+    color: #d6006e; /* U+ 스타일의 진한 핑크 텍스트 */
+    padding: 5px 10px;
+    border-radius: 15px; /* 둥근 모서리 (pill shape) */
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1;
+    white-space: nowrap; /* 태그 내용이 길어도 한 줄로 표시 */
+}
+
+
+/* ================================== */
+/* 요금제 카드 푸터 및 버튼 스타일    */
+/* ================================== */
+.plan-card-footer {
+    padding-top: 15px;
+    margin-top: auto; /* 내용이 적어도 버튼이 항상 하단에 위치하도록 함 */
+}
+
+.change-plan-btn {
+    width: 100%;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 6px;
+    background-color: #0055d4; /* U+ 대표 색상 */
+    color: white;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.change-plan-btn:hover {
+    background-color: #003b95; /* 호버 시 색상 */
 }

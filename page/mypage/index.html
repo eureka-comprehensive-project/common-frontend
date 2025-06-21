@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>마이페이지</title>
+  <title>요기U+ 마이페이지</title>
   <link rel="stylesheet" href="../../css/mypage.css">
 </head>
 <body>
-  <!-- 사이드바 -->
+
   <div class="sidebar" id="sidebar">
     <div class="sidebar-header">
-      <img src="/logo.png" alt="" class="sidebar-logo" />
+      <img src="/logo.png" alt="Logo" class="sidebar-logo" />
     </div>
     <div class="sidebar-content">
       <div class="sidebar-item" onclick="moveChatbotPage()">
@@ -28,104 +28,174 @@
     </div>
   </div>
 
-  <!-- 메인 컨텐츠 -->
+  <div class="overlay" id="overlay"></div>
+
   <div class="main-content">
-    <div class="container">
-      <!-- 페이지 헤더 -->
-      <div class="page-header">
-        <h1>마이페이지</h1>
-        <p>내 사용량과 요금제 정보를 확인하세요</p>
-      </div>
-
-      <!-- 사용자 정보 헤더 -->
-      <div class="user-info-section">
-        <div class="user-info">
-          <div class="user-name"></div>
-          <div class="user-phone"></div>
+    <div class="content-wrapper">
+      <div class="dashboard-header">
+        <button class="menu-toggle-btn" id="menuToggleBtn">☰</button>
+        <div class="header-content">
+          <div class="welcome-section">
+            <h1>안녕하세요! 👋</h1>
+            <p class="user-name"></p>
+            <p class="user-phone"></p>
+          </div>
+          <div class="header-actions">
+            <button class="edit-btn">
+              <span class="btn-icon">👤</span>
+              개인정보 보기
+            </button>
+          </div>
         </div>
-        <button class="edit-btn">개인 정보 상세 보기</button>
       </div>
 
-      <!-- 메인 콘텐츠 그리드 -->
-      <div class="content-grid">
-        <!-- 왼쪽 영역 -->
-        <div class="main-area">
-          <!-- 사용 중인 요금제 -->
-          <div class="info-card">
-            <div class="section-title" id="planBenefitDisplay">
-              사용 중인 요금제 |
-            </div>
-          </div>
-
-          <!-- 이번달 사용량 -->
-          <div class="info-card">
-            <div class="section-title">이번달 사용량</div>
-            <div class="usage-charts">
-              <div class="chart-container">
-                <div class="chart-label">데이터</div>
-                <div class="chart" id="dataChart">
-                  <div class="chart-text"><br><small></small></div>
-                </div>
+      <div class="stats-dashboard">
+        <div class="stat-card plan-card large">
+          <div class="stat-icon">📋</div>
+          <div class="stat-content">
+            <h3>현재 요금제</h3>
+            <div class="plan-name" id="planBenefitDisplay">로딩중...</div>
+            <div class="plan-category" id="planCategory"></div>
+            <div class="plan-details">
+              <div class="plan-detail-item">
+                <span class="detail-label">데이터</span>
+                <span class="detail-value" id="dataAllowanceDisplay">-</span>
               </div>
-
-              <div class="chart-container">
-                <div class="chart-label">음성</div>
-                <div class="chart" id="callChart">
-                  <div class="chart-text"><br><small></small></div>
-                </div>
+              <div class="plan-detail-item">
+                <span class="detail-label">데이터 주기</span>
+                <span class="detail-value" id="dataPeriodDisplay">-</span>
               </div>
-
-              <div class="chart-container">
-                <div class="chart-label">문자</div>
-                <div class="chart" id="messageChart">
-                  <div class="chart-text"><br><small></small></div>
-                </div>
+              <div class="plan-detail-item">
+                <span class="detail-label">테더링</span>
+                <span class="detail-value" id="tetheringDisplay">-</span>
+              </div>
+              <div class="plan-detail-item">
+                <span class="detail-label">가족 데이터</span>
+                <span class="detail-value" id="familyDataDisplay">-</span>
+              </div>
+              <div class="plan-detail-item">
+                <span class="detail-label">음성통화</span>
+                <span class="detail-value" id="voiceDisplay">-</span>
+              </div>
+              <div class="plan-detail-item">
+                <span class="detail-label">추가 음성</span>
+                <span class="detail-value" id="additionalCallDisplay">-</span>
               </div>
             </div>
-          </div>
-
-          <!-- 월 이용패턴 -->
-          <div class="info-card">
-            <div class="section-title">월 이용패턴</div>
-            <div class="pattern-tabs">
-              <div class="tab active">데이터</div>
-              <div class="tab">음성통화</div>
-              <div class="tab">문자</div>
-            </div>
-            <div class="chart-area">
-              <div class="bar">
-                <div class="data-label"></div>
-                <div class="bar-fill"></div>
-                <div class="bar-label"></div>
+            <div class="plan-benefits">
+              <div class="benefit-section" id="premiumBenefitSection" style="display: none;">
+                <div class="benefit-category">프리미엄 혜택</div>
+                <div class="benefit-list" id="premiumBenefits"></div>
               </div>
-              <div class="bar">
-                <div class="data-label"></div>
-                <div class="bar-fill"></div>
-                <div class="bar-label">2</div>
+              <div class="benefit-section" id="mediaBenefitSection" style="display: none;">
+                <div class="benefit-category">미디어 혜택</div>
+                <div class="benefit-list" id="mediaBenefits"></div>
               </div>
-              <div class="bar">
-                <div class="data-label"></div>
-                <div class="bar-fill"></div>
-                <div class="bar-label"></div>
+              <div class="benefit-section" id="basicBenefitSection" style="display: none;">
+                <div class="benefit-category">베이직 혜택</div>
+                <div class="benefit-list" id="basicBenefits"></div>
               </div>
             </div>
           </div>
         </div>
+        
+        <div class="side-stats">
+          <div class="stat-card billing-card compact">
+            <div class="stat-icon small">💳</div>
+            <div class="stat-content">
+              <h3>이번 달 요금</h3>
+              <div class="amount"></div>
+              <div class="amount-period"></div>
+            </div>
+          </div>
+          
+          <div class="stat-card usage-card compact">
+            <div class="stat-icon small">📊</div>
+            <div class="stat-content">
+              <h3>이번달 사용량</h3>
+              <div class="mini-usage-grid">
+                <div class="mini-usage-item">
+                  <div class="mini-label">데이터</div>
+                  <div class="mini-progress">
+                    <div class="mini-progress-bar" id="miniDataProgress"></div>
+                  </div>
+                  <div class="mini-value" id="miniDataValue">0GB</div>
+                </div>
+                <div class="mini-usage-item">
+                  <div class="mini-label">음성</div>
+                  <div class="mini-progress">
+                    <div class="mini-progress-bar" id="miniCallProgress"></div>
+                  </div>
+                  <div class="mini-value" id="miniCallValue">0분</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-        <!-- 오른쪽 청구정보 -->
-        <div class="billing-info">
-          <div class="info-title">청구 및 납부현황</div>
-          <div class="billing-amount">
-            <div class="amount-title"></div>
-            <div class="amount-period"></div>
-            <div class="amount"></div>
+      <div class="main-dashboard">
+        <div class="pattern-section">
+          <div class="section-header">
+            <h2>월별 이용 패턴</h2>
+            <div class="pattern-controls">
+              <div class="tab-buttons">
+                <button class="tab-btn active" data-type="데이터">데이터</button>
+                <button class="tab-btn" data-type="음성통화">음성통화</button>
+              </div>
+            </div>
+          </div>
+          
+          <div class="pattern-chart">
+            <div class="month-cards-container">
+              <div class="month-card" id="monthCard0">
+                <div class="month-header">
+                  <div class="month-name">-</div>
+                  <div class="trend-indicator" id="trend0">-</div>
+                </div>
+                <div class="month-usage">
+                  <div class="usage-value" id="usage0">-</div>
+                  <div class="usage-change" id="change0">-</div>
+                </div>
+                <div class="month-visual">
+                  <div class="visual-bar" id="visualBar0" style="width: 0%;"></div>
+                </div>
+              </div>
+              
+              <div class="month-card" id="monthCard1">
+                <div class="month-header">
+                  <div class="month-name">-</div>
+                  <div class="trend-indicator" id="trend1">-</div>
+                </div>
+                <div class="month-usage">
+                  <div class="usage-value" id="usage1">-</div>
+                  <div class="usage-change" id="change1">-</div>
+                </div>
+                <div class="month-visual">
+                  <div class="visual-bar" id="visualBar1" style="width: 0%;"></div>
+                </div>
+              </div>
+              
+              <div class="month-card" id="monthCard2">
+                <div class="month-header">
+                  <div class="month-name">-</div>
+                  <div class="trend-indicator" id="trend2">-</div>
+                </div>
+                <div class="month-usage">
+                  <div class="usage-value" id="usage2">-</div>
+                  <div class="usage-change" id="change2">-</div>
+                </div>
+                <div class="month-visual">
+                  <div class="visual-bar" id="visualBar2" style="width: 0%;"></div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- 프로필 팝업 -->
   <div class="profile-popup" id="profilePopup">
     <div class="profile-popup-content">
       <div class="profile-popup-body">
@@ -141,7 +211,6 @@
     </div>
   </div>
 
-  <!-- 개인정보 상세 보기 모달 -->
   <div class="edit-modal hidden">
     <div class="edit-box">
       <div class="modal-header">
@@ -149,25 +218,27 @@
         <button class="close-btn" id="cancelBtn">&times;</button>
       </div>
       <div class="modal-content">
-        <div class="input-group">
-          <label>이메일</label>
-          <input type="text" id="email" disabled>
-        </div>
-        <div class="input-group">
-          <label>이름</label>
-          <input type="text" id="name" disabled>
-        </div>
-        <div class="input-group">
-          <label>생년월일</label>
-          <input type="text" id="birth" disabled>
-        </div>
-        <div class="input-group">
-          <label>전화번호</label>
-          <input type="text" id="phone" disabled>
-        </div>
-        <div class="input-group">
-          <label>가입일</label>
-          <input type="text" id="joinDate" disabled>
+        <div class="info-grid">
+          <div class="info-item">
+            <label>이메일</label>
+            <input type="text" id="email" disabled>
+          </div>
+          <div class="info-item">
+            <label>이름</label>
+            <input type="text" id="name" disabled>
+          </div>
+          <div class="info-item">
+            <label>생년월일</label>
+            <input type="text" id="birth" disabled>
+          </div>
+          <div class="info-item">
+            <label>전화번호</label>
+            <input type="text" id="phone" disabled>
+          </div>
+          <div class="info-item">
+            <label>가입일</label>
+            <input type="text" id="joinDate" disabled>
+          </div>
         </div>
       </div>
     </div>

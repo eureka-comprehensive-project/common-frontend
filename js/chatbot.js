@@ -13,11 +13,10 @@ let isLoadingMoreChatRooms = false;
 let allChatRoomsLoaded = false;
 const CHAT_LIST_PAGE_SIZE = 20;
 
-// 음성 인식 관련 변수
+// --- [수정된 부분] 음성 인식 관련 변수 ---
 let recognition = null;
 let isRecognizing = false;
-let finalTranscript = "";
-let interimMessageDiv = null;
+// --- [수정 끝] ---
 
 // 부가 혜택 정보를 저장할 Map
 let allBenefitsMap = new Map();
@@ -295,14 +294,14 @@ function renderChatList(chatList, append = false) {
         const month = String(creationDate.getMonth() + 1).padStart(2, '0');
         const day = String(creationDate.getDate()).padStart(2, '0');
         const formattedDate = `${year}/${month}/${day}`;
-        
+
         chatItem.innerHTML = `
             <div class="chat-item-content">
                 <span class="chat-item-title">${title}</span>
                 <span class="chat-item-date">${formattedDate}</span>
             </div>
         `;
-        
+
         chatListContainer.appendChild(chatItem);
     });
 };
@@ -317,7 +316,7 @@ function selectChat(chatId) {
     if (currentChatId === chatId) {
         return;
     }
-    
+
     currentChatId = chatId;
     console.log(`채팅방 선택: ${chatId}`);
 
@@ -334,11 +333,11 @@ function selectChat(chatId) {
     });
 
     const selectedChatItem = document.querySelector(`.chat-item[data-chat-id='${chatId}']`);
-    if(selectedChatItem) {
+    if (selectedChatItem) {
         selectedChatItem.classList.add('active');
         const titleElement = selectedChatItem.querySelector('.chat-item-title');
         if (titleElement) {
-             updateChatHeader(titleElement.textContent.trim());
+            updateChatHeader(titleElement.textContent.trim());
         }
     }
 
@@ -349,7 +348,7 @@ function selectChat(chatId) {
 async function loadChatContent(chatId) {
     const chatContent = document.getElementById('chatContent');
     document.getElementById('suggestionContainer').classList.remove('show');
-    
+
     chatContent.innerHTML = '';
     addMessageToChat('system', '대화 내용을 불러오는 중입니다...');
 
@@ -392,15 +391,20 @@ async function loadChatContent(chatId) {
                         if (messageContent.startsWith('[')) {
                             messageContent = messageContent.substring(1);
                         }
-                        const { intro, plans } = parseDtoPlans(messageContent);
+                        const {
+                            intro,
+                            plans
+                        } = parseDtoPlans(messageContent);
                         renderDtoPlanCards(intro, plans, false);
-                    } 
-                    else if (msg.isRecommended === true || msg.content.includes('고객님의 통신 성향을 바탕으로') || msg.content.includes('고객님께 다음 요금제들을')) {
+                    } else if (msg.isRecommended === true || msg.content.includes('고객님의 통신 성향을 바탕으로') || msg.content.includes('고객님께 다음 요금제들을')) {
                         let messageContent = msg.content;
                         if (messageContent.startsWith('[')) {
                             messageContent = messageContent.substring(1);
                         }
-                        const { intro, plans } = parseTextPlans(messageContent);
+                        const {
+                            intro,
+                            plans
+                        } = parseTextPlans(messageContent);
                         renderTextPlanCards(intro, plans, false, false);
                     } else {
                         addMessageToChat('bot', msg.content, msg.timestamp, true); // 애니메이션 없음
@@ -419,7 +423,7 @@ async function loadChatContent(chatId) {
             }, 100);
         } else {
             addMessageToChat('system', '이전 대화 내용이 없습니다.');
-            if(chatRoomStates[currentChatId]) chatRoomStates[currentChatId].allHistoryLoaded = true;
+            if (chatRoomStates[currentChatId]) chatRoomStates[currentChatId].allHistoryLoaded = true;
         }
 
     } catch (error) {
@@ -495,15 +499,20 @@ async function loadMoreChatContent() {
                         if (messageContent.startsWith('[')) {
                             messageContent = messageContent.substring(1);
                         }
-                        const { intro, plans } = parseDtoPlans(messageContent);
+                        const {
+                            intro,
+                            plans
+                        } = parseDtoPlans(messageContent);
                         renderDtoPlanCards(intro, plans, true);
-                    }
-                    else if (msg.isRecommended === true || msg.content.includes('고객님의 통신 성향을 바탕으로') || msg.content.includes('고객님께 다음 요금제들을')) {
+                    } else if (msg.isRecommended === true || msg.content.includes('고객님의 통신 성향을 바탕으로') || msg.content.includes('고객님께 다음 요금제들을')) {
                         let messageContent = msg.content;
                         if (messageContent.startsWith('[')) {
                             messageContent = messageContent.substring(1);
                         }
-                        const { intro, plans } = parseTextPlans(messageContent);
+                        const {
+                            intro,
+                            plans
+                        } = parseTextPlans(messageContent);
                         renderTextPlanCards(intro, plans, true, false);
                     } else {
                         prependMessageToChat('bot', msg.content, msg.timestamp);
@@ -522,7 +531,7 @@ async function loadMoreChatContent() {
 
     } catch (error) {
         console.error('이전 대화 내용 로드 중 오류 발생:', error);
-        if(loadingIndicator) loadingIndicator.remove();
+        if (loadingIndicator) loadingIndicator.remove();
         if (chatRoomStates[currentChatId]) chatRoomStates[currentChatId].allHistoryLoaded = true;
     } finally {
         if (chatRoomStates[currentChatId]) chatRoomStates[currentChatId].isLoadingMoreMessages = false;
@@ -582,12 +591,12 @@ function displayWelcomeMessage() {
         const button = document.createElement('div');
         button.className = 'suggestion-item';
         button.textContent = text;
-        
+
         button.onclick = () => {
-            messageInput.value = text;
-            sendMessage();
+            messageInput.value = text;
+            sendMessage();
         };
-        
+
         suggestionContainer.appendChild(button);
     });
 
@@ -595,7 +604,7 @@ function displayWelcomeMessage() {
     updateChatHeader('새로운 대화');
 }
 
-// [MODIFIED] 메시지 전송 함수
+// 메시지 전송 함수
 async function sendMessage() {
     const messageInput = document.getElementById('messageInput');
     const message = messageInput.value.trim();
@@ -618,7 +627,9 @@ async function sendMessage() {
                     'Authorization': `Bearer ${accessToken}`,
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ userId: userId })
+                body: JSON.stringify({
+                    userId: userId
+                })
             });
 
             if (!createRoomResponse.ok) {
@@ -670,21 +681,26 @@ async function sendMessage() {
                 if (messageContent.startsWith('[')) {
                     messageContent = messageContent.substring(1);
                 }
-                const { intro, plans } = parseDtoPlans(messageContent);
+                const {
+                    intro,
+                    plans
+                } = parseDtoPlans(messageContent);
                 renderDtoPlanCards(intro, plans, false);
-            }
-            else if (botResponse.isRecommended === true) {
+            } else if (botResponse.isRecommended === true) {
                 let messageContent = botResponse.message;
                 if (messageContent.startsWith('[')) {
                     messageContent = messageContent.substring(1);
                 }
-                const { intro, plans } = parseTextPlans(messageContent);
+                const {
+                    intro,
+                    plans
+                } = parseTextPlans(messageContent);
                 renderTextPlanCards(intro, plans, false, true);
             } else {
                 addMessageToChat('bot', botResponse.message);
             }
         } else {
-             addMessageToChat('bot', '응답을 받을 수 없습니다.');
+            addMessageToChat('bot', '응답을 받을 수 없습니다.');
         }
 
         if (isNewChat) {
@@ -693,30 +709,29 @@ async function sendMessage() {
             if (noChatsMessage) {
                 noChatsMessage.remove();
             }
-            
+
             document.querySelectorAll('.chat-item.active').forEach(item => item.classList.remove('active'));
 
-            // [FIX] 클로저(closure) 문제 해결을 위해 새로운 채팅방 ID를 지역 상수에 할당
             const newChatRoomId = currentChatId;
 
             const chatItem = document.createElement('div');
             chatItem.className = 'chat-item active';
-            chatItem.dataset.chatId = newChatRoomId; // 지역 상수 사용
-            chatItem.onclick = () => selectChat(newChatRoomId); // 지역 상수 사용
+            chatItem.dataset.chatId = newChatRoomId;
+            chatItem.onclick = () => selectChat(newChatRoomId);
 
             const creationDate = new Date();
             const year = creationDate.getFullYear();
             const month = String(creationDate.getMonth() + 1).padStart(2, '0');
             const day = String(creationDate.getDate()).padStart(2, '0');
             const formattedDate = `${year}/${month}/${day}`;
-            
+
             chatItem.innerHTML = `
                 <div class="chat-item-content">
                     <span class="chat-item-title">${message}</span>
                     <span class="chat-item-date">${formattedDate}</span>
                 </div>
             `;
-            
+
             chatListContainer.prepend(chatItem);
             updateChatHeader(message);
         }
@@ -730,15 +745,6 @@ async function sendMessage() {
             updateChatHeader('새로운 대화');
         }
     }
-}
-
-// STT로부터 메시지 입력
-function setMessageFromSTT(message) {
-    if (!message) return;
-
-    const messageInput = document.getElementById('messageInput');
-    messageInput.value = message;
-    messageInput.focus();
 }
 
 // 채팅에 메시지 추가
@@ -760,8 +766,7 @@ function addMessageToChat(sender, message, timestamp, noAnimation = false) {
 
     const messageElement = document.createElement('div');
     messageElement.className = `message ${sender}`;
-    
-    // 애니메이션 제어
+
     if (noAnimation) {
         messageElement.classList.add('no-animation');
     }
@@ -779,13 +784,15 @@ function addMessageToChat(sender, message, timestamp, noAnimation = false) {
         const messageTime = document.createElement('div');
         messageTime.className = 'message-time';
         const date = timestamp ? new Date(timestamp) : new Date();
-        messageTime.textContent = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        messageTime.textContent = date.toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit'
+        });
         messageElement.appendChild(messageTime);
     }
 
     chatContent.appendChild(messageElement);
-    
-    // 부드러운 스크롤로 최하단 이동 (새 메시지일 때만)
+
     if (!noAnimation) {
         smoothScrollToBottom();
     }
@@ -796,7 +803,6 @@ function addMessageToChat(sender, message, timestamp, noAnimation = false) {
 // 부드러운 스크롤 함수
 function smoothScrollToBottom() {
     const chatContent = document.getElementById('chatContent');
-    // 애니메이션이 시작된 후 스크롤
     setTimeout(() => {
         chatContent.scrollTo({
             top: chatContent.scrollHeight,
@@ -810,7 +816,7 @@ function prependMessageToChat(sender, message, timestamp) {
     const chatContent = document.getElementById('chatContent');
 
     const messageElement = document.createElement('div');
-    messageElement.className = `message ${sender} no-animation`; // 애니메이션 없음
+    messageElement.className = `message ${sender} no-animation`;
 
     const messageBubble = document.createElement('div');
     messageBubble.className = 'message-bubble';
@@ -822,54 +828,18 @@ function prependMessageToChat(sender, message, timestamp) {
         const messageTime = document.createElement('div');
         messageTime.className = 'message-time';
         const date = new Date(timestamp);
-        messageTime.textContent = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        messageTime.textContent = date.toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit'
+        });
         messageElement.appendChild(messageTime);
     }
 
     const loadingIndicator = chatContent.querySelector('.loading-indicator');
-    if(loadingIndicator) {
-         loadingIndicator.insertAdjacentElement('afterend', messageElement);
+    if (loadingIndicator) {
+        loadingIndicator.insertAdjacentElement('afterend', messageElement);
     } else {
         chatContent.prepend(messageElement);
-    }
-}
-
-// 임시 메시지 표시 (음성 인식 중)
-function displayMessage(sender, message) {
-    const chatContent = document.getElementById('chatContent');
-    const welcomeMessage = chatContent.querySelector('.welcome-message');
-    if (welcomeMessage) {
-        chatContent.innerHTML = '';
-    }
-
-    const messageElement = document.createElement('div');
-    messageElement.className = `message ${sender} interim`;
-
-    const messageId = 'interim_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-    messageElement.id = messageId;
-
-    const messageBubble = document.createElement('div');
-    messageBubble.className = 'message-bubble';
-    messageBubble.textContent = message;
-
-    const messageTime = document.createElement('div');
-    messageTime.className = 'message-time';
-    messageTime.textContent = new Date().toLocaleTimeString();
-
-    messageElement.appendChild(messageBubble);
-    messageElement.appendChild(messageTime);
-    chatContent.appendChild(messageElement);
-
-    chatContent.scrollTop = chatContent.scrollHeight;
-
-    return messageElement;
-}
-
-// 임시 메시지 제거
-function removeInterimMessage() {
-    if (interimMessageDiv) {
-        interimMessageDiv.remove();
-        interimMessageDiv = null;
     }
 }
 
@@ -881,100 +851,222 @@ function removeMessage(messageId) {
     }
 }
 
-// 음성 인식 토글
-function toggleSTT() {
+// --- [새로 추가 및 수정된 음성인식 관련 함수들] ---
+
+// 음성 녹음 시작 (마이크 버튼 클릭시 호출)
+function startRecording() {
+    if (isRecognizing) {
+        stopRecognition();
+        return;
+    }
+    showSttModal();
+}
+
+function showSttModal() {
+    const modalHTML = `
+        <div class="stt-modal-overlay" id="sttModalOverlay">
+            <div class="stt-modal">
+                <div class="stt-modal-header">
+                    <h3>🎙️ 음성으로 입력하기</h3>
+                    <div class="stt-header-controls" id="sttHeaderControls"></div>
+                </div>
+                <div class="stt-modal-body">
+                    <p id="sttModalText" class="placeholder">마이크에 대고 말씀해주세요...</p>
+                </div>
+                <div class="stt-modal-footer">
+                    <button class="stt-modal-btn stt-cancel-btn" id="sttCancelBtn">취소</button>
+                    <button class="stt-modal-btn stt-send-btn" id="sttSendBtn">전송</button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    const overlay = document.getElementById('sttModalOverlay');
+    
+    setTimeout(() => overlay.classList.add('show'), 10);
+
+    document.getElementById('sttCancelBtn').onclick = closeSttModal;
+    document.getElementById('sttSendBtn').onclick = sendSttMessage;
+
+    startRecognition();
+}
+
+
+// 음성 인식 모달 닫기
+function closeSttModal() {
+    stopRecognition(); // 진행중인 음성 인식 중지
+    const modalOverlay = document.getElementById('sttModalOverlay');
+    if (modalOverlay) {
+        modalOverlay.classList.remove('show');
+        // 트랜지션이 끝난 후 DOM에서 제거
+        modalOverlay.addEventListener('transitionend', () => modalOverlay.remove(), { once: true });
+    }
+}
+
+
+function retryStt() {
+    closeSttModal();
+    // 이전 모달이 사라지는 애니메이션 시간을 고려하여 잠시 후 새 모달을 엽니다.
+    setTimeout(showSttModal, 200);
+}
+
+
+// 모달에서 인식된 텍스트를 메시지로 전송
+
+function sendSttMessage() {
+    const modalTextElement = document.getElementById('sttModalText');
+    if (!modalTextElement || modalTextElement.classList.contains('placeholder') || modalTextElement.classList.contains('error')) {
+        console.log('안내 또는 에러 메시지는 전송할 수 없습니다.');
+        const modal = document.querySelector('.stt-modal');
+        if (modal) {
+            modal.style.transition = 'transform 0.1s ease';
+            modal.style.transform = 'scale(1.02)';
+            setTimeout(() => {
+                modal.style.transform = 'scale(1)';
+            }, 100);
+        }
+        return;
+    }
+    const messageText = modalTextElement.textContent.trim();
+    if (messageText) {
+        const messageInput = document.getElementById('messageInput');
+        messageInput.value = messageText;
+        sendMessage();
+    }
+    closeSttModal();
+}
+
+function startRecognition() {
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-        alert("이 브라우저는 음성 인식을 지원하지 않습니다 (크롬에서만 작동).");
+        const modalText = document.getElementById('sttModalText');
+        if (modalText) {
+            modalText.textContent = '이 브라우저는 음성 인식을 지원하지 않습니다. (Chrome 브라우저 권장)';
+            modalText.className = 'error';
+        }
         return;
     }
 
-    const button = document.querySelector('.mic-button');
+    let silenceTimeout;
+    const THINKING_TIME = 2000;
 
-    if (!recognition) {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        recognition = new SpeechRecognition();
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    recognition = new SpeechRecognition();
+    recognition.lang = "ko-KR";
+    recognition.interimResults = true;
+    recognition.continuous = true;
+    recognition.maxAlternatives = 1;
 
-        recognition.lang = "ko-KR";
-        recognition.interimResults = false;
-        recognition.maxAlternatives = 1;
-        recognition.continuous = false;
+    let finalTranscript = '';
 
-        recognition.onstart = () => {
-            console.log('음성 인식 시작됨');
-            isRecognizing = true;
-            button.innerHTML = "🛑";
-            interimMessageDiv = displayMessage("user", "🎤 음성 인식 중...");
-        };
-
-        recognition.onresult = (event) => {
-            if (event.results.length > 0) {
-                finalTranscript = event.results[0][0].transcript.trim();
-            }
-        };
-
-        recognition.onerror = (event) => {
-            console.error('음성 인식 오류:', event.error);
-            removeInterimMessage();
-            stopRecognition();
-
-            let errorMessage = "음성 인식 오류가 발생했습니다.";
-            switch (event.error) {
-                case 'no-speech':
-                    errorMessage = "음성이 감지되지 않았습니다.";
-                    break;
-                case 'audio-capture':
-                    errorMessage = "마이크에 접근할 수 없습니다.";
-                    break;
-                case 'not-allowed':
-                    errorMessage = "마이크 권한이 거부되었습니다.";
-                    break;
-            }
-            alert(errorMessage);
-        };
-
-        recognition.onend = () => {
-            console.log('음성 인식 종료');
-            removeInterimMessage();
-
-            if (finalTranscript !== "") {
-                setMessageFromSTT(finalTranscript);
-                sendMessage();
-                finalTranscript = "";
-            }
-            stopRecognition();
-        };
-    }
-
-    if (!isRecognizing) {
-        finalTranscript = "";
-        try {
-            recognition.start();
-        } catch (error) {
-            console.error('음성 인식 시작 실패:', error);
-            alert('음성 인식을 시작할 수 없습니다.');
+    recognition.onstart = () => {
+        isRecognizing = true;
+        document.querySelector('.mic-button').innerHTML = "🛑";
+        
+        const headerControls = document.getElementById('sttHeaderControls');
+        if (headerControls) {
+            headerControls.innerHTML = '<div class="recording-indicator"></div>';
         }
-    } else {
-        recognition.stop();
+
+        const modalText = document.getElementById('sttModalText');
+        if (modalText) {
+            modalText.textContent = '듣고 있어요...';
+            modalText.className = 'placeholder';
+        }
+
+        // 재시도 시, 전송 버튼을 원래대로 복구
+        const sendBtn = document.getElementById('sttSendBtn');
+        if(sendBtn) {
+            sendBtn.textContent = '전송';
+            sendBtn.onclick = sendSttMessage;
+        }
+    };
+
+    recognition.onresult = (event) => {
+        clearTimeout(silenceTimeout);
+        let interimTranscript = '';
+        finalTranscript = '';
+        for (let i = 0; i < event.results.length; ++i) {
+            if (event.results[i].isFinal) {
+                finalTranscript += event.results[i][0].transcript;
+            } else {
+                interimTranscript += event.results[i][0].transcript;
+            }
+        }
+        const modalText = document.getElementById('sttModalText');
+        const displayText = (finalTranscript + interimTranscript).trim();
+        if (modalText && displayText) {
+            modalText.textContent = displayText;
+            modalText.className = '';
+        }
+        silenceTimeout = setTimeout(() => {
+            if (recognition) {
+                recognition.stop();
+            }
+        }, THINKING_TIME);
+    };
+
+    recognition.onerror = (event) => {
+        console.error('음성 인식 오류:', event.error);
+        clearTimeout(silenceTimeout);
+        const modalText = document.getElementById('sttModalText');
+        if (modalText) {
+            let errorMessage = "음성 인식 중 오류가 발생했습니다.";
+            if (event.error === 'no-speech') {
+                errorMessage = "음성이 감지되지 않았습니다. 다시 시도해주세요.";
+                // '전송' 버튼을 '재시도' 버튼으로 변경
+                const sendBtn = document.getElementById('sttSendBtn');
+                if (sendBtn) {
+                    sendBtn.textContent = '재시도';
+                    sendBtn.onclick = retryStt;
+                }
+            } else if (event.error === 'audio-capture') {
+                errorMessage = "마이크에 접근할 수 없습니다. 권한을 확인해주세요.";
+            } else if (event.error === 'not-allowed') {
+                errorMessage = "마이크 사용 권한이 거부되었습니다.";
+            }
+            modalText.textContent = errorMessage;
+            modalText.className = 'error';
+        }
+        stopRecognition();
+    };
+
+    recognition.onend = () => {
+        console.log('음성 인식 세션 종료');
+        clearTimeout(silenceTimeout);
+
+        const headerControls = document.getElementById('sttHeaderControls');
+        if (headerControls) {
+            headerControls.innerHTML = '<button class="stt-retry-btn-corner" onclick="retryStt()">⟳</button>';
+        }
+
+        stopRecognition();
+    };
+
+    try {
+        recognition.start();
+    } catch (e) {
+        console.error("음성 인식 시작 실패:", e);
+        stopRecognition();
     }
 }
-
 // 음성 인식 중지
 function stopRecognition() {
+    if (recognition) {
+        recognition.stop();
+        recognition = null;
+    }
     isRecognizing = false;
-    const button = document.querySelector('.mic-button');
-    button.innerHTML = "🎙️";
+    document.querySelector('.mic-button').innerHTML = "🎙️";
 }
+// --- [음성인식 함수 수정 끝] ---
+
 
 // 키보드 이벤트 처리
 function handleKeyPress(event) {
     if (event.key === 'Enter') {
         sendMessage();
     }
-}
-
-// 음성 녹음 시작
-function startRecording() {
-    toggleSTT();
 }
 
 // 프로필 메뉴 토글 (plan과 동일)
@@ -993,7 +1085,7 @@ function closeProfilePopup() {
 function goToMyPage(event) {
     event.stopPropagation();
     closeProfilePopup();
-    
+
     window.location.href = '/page/mypage';
 }
 
@@ -1001,7 +1093,7 @@ function goToMyPage(event) {
 function logout(event) {
     event.stopPropagation();
     closeProfilePopup();
-    
+
     showLogoutModal();
 }
 
@@ -1073,7 +1165,11 @@ function parseTextPlans(text) {
     const parts = text.split("요금제:").filter(p => p.trim() !== '');
 
     if (parts.length === 0) {
-        return { intro: text, plans: [], outro: '' };
+        return {
+            intro: text,
+            plans: [],
+            outro: ''
+        };
     }
 
     const intro = parts.shift().trim();
@@ -1096,7 +1192,9 @@ function parseTextPlans(text) {
         const lines = part.trim().split('\n').filter(line => line.trim() !== '');
         if (lines.length < 1) return;
 
-        const plan = { '요금제': lines.shift().replace(/-|'/g, '').trim() };
+        const plan = {
+            '요금제': lines.shift().replace(/-|'/g, '').trim()
+        };
 
         lines.forEach(line => {
             const detail = line.split(':');
@@ -1112,7 +1210,11 @@ function parseTextPlans(text) {
         }
     });
 
-    return { intro, plans, outro };
+    return {
+        intro,
+        plans,
+        outro
+    };
 }
 
 function parseDtoPlans(messageContent) {
@@ -1123,7 +1225,10 @@ function parseDtoPlans(messageContent) {
     const planStrings = messageContent.match(planRegex);
 
     if (!planStrings) {
-        return { intro: messageContent, plans: [] };
+        return {
+            intro: messageContent,
+            plans: []
+        };
     }
 
     const firstMatchIndex = messageContent.indexOf(planStrings[0]);
@@ -1131,8 +1236,8 @@ function parseDtoPlans(messageContent) {
 
     planStrings.forEach(planString => {
         const plan = {};
-        const fieldsString = planString.substring(22, planString.length - 1); 
-        
+        const fieldsString = planString.substring(22, planString.length - 1);
+
         const pairs = fieldsString.split(/, (?=\w+=)/);
 
         pairs.forEach(pair => {
@@ -1145,19 +1250,21 @@ function parseDtoPlans(messageContent) {
                 value = (value === 'true');
             } else if (value.startsWith('[')) {
                 // Keep as string
-            }
-            else if (!isNaN(value) && value.trim() !== '' && !value.includes('-')) {
+            } else if (!isNaN(value) && value.trim() !== '' && !value.includes('-')) {
                 if (!/\D/.test(value)) {
                     value = Number(value);
                 }
             }
-            
+
             plan[key.trim()] = value;
         });
         plans.push(plan);
     });
 
-    return { intro, plans };
+    return {
+        intro,
+        plans
+    };
 }
 
 function handleFeedbackClick(buttonElement, feedbackText, displayText) {
@@ -1201,24 +1308,28 @@ async function sendFeedbackToServer(feedbackMessage) {
 
         if (result && result.data && result.data.message) {
             const botResponse = result.data;
-            
+
             if (botResponse.isPlanShow === true) {
                 let messageContent = botResponse.message;
                 if (messageContent.startsWith('[')) {
                     messageContent = messageContent.substring(1);
                 }
-                const { intro, plans } = parseDtoPlans(messageContent);
+                const {
+                    intro,
+                    plans
+                } = parseDtoPlans(messageContent);
                 renderDtoPlanCards(intro, plans, false);
-            }
-            else if (botResponse.isRecommended === true) {
+            } else if (botResponse.isRecommended === true) {
                 let messageContent = botResponse.message;
                 if (messageContent.startsWith('[')) {
                     messageContent = messageContent.substring(1);
                 }
-                const { intro, plans } = parseTextPlans(messageContent);
+                const {
+                    intro,
+                    plans
+                } = parseTextPlans(messageContent);
                 renderTextPlanCards(intro, plans, false, true);
-            }
-            else {
+            } else {
                 addMessageToChat('bot', botResponse.message);
             }
         } else {
@@ -1236,12 +1347,11 @@ function renderTextPlanCards(intro, plans, prepend = false, showFeedback = false
     const chatContent = document.getElementById('chatContent');
     const cardsContainer = document.createElement('div');
     cardsContainer.className = 'message bot';
-    
-    // 애니메이션 제어
+
     if (prepend) {
         cardsContainer.classList.add('no-animation');
     }
-    
+
     let cardsHTML = `<div class="message-bubble">`;
 
     if (intro) {
@@ -1285,7 +1395,7 @@ function renderTextPlanCards(intro, plans, prepend = false, showFeedback = false
         if (loadingIndicator) {
             loadingIndicator.insertAdjacentElement('afterend', cardsContainer);
         } else {
-             chatContent.prepend(cardsContainer);
+            chatContent.prepend(cardsContainer);
         }
     } else {
         const welcomeMessage = chatContent.querySelector('.welcome-message');
@@ -1301,10 +1411,15 @@ function requestPlanChange(planId, benefitIdListString) {
     try {
         const benefitIds = JSON.parse(benefitIdListString);
         alert(`'요금제 변경하기' 기능은 현재 개발 중입니다.\n\n선택된 요금제 ID: ${planId}\n선택된 혜택 ID 목록: ${benefitIds.join(', ') || '없음'}`);
-        console.log("요금제 변경 요청 (API 미연결):", { planId, benefitIds });
-    } catch(e) {
+        console.log("요금제 변경 요청 (API 미연결):", {
+            planId,
+            benefitIds
+        });
+    } catch (e) {
         alert(`'요금제 변경하기' 기능은 현재 개발 중입니다.\n\n선택된 요금제 ID: ${planId}`);
-        console.log("요금제 변경 요청 (API 미연결):", { planId });
+        console.log("요금제 변경 요청 (API 미연결):", {
+            planId
+        });
     }
 }
 
@@ -1312,14 +1427,13 @@ function renderDtoPlanCards(intro, plans, prepend = false) {
     const chatContent = document.getElementById('chatContent');
     const cardsContainer = document.createElement('div');
     cardsContainer.className = 'message bot';
-    
-    // 애니메이션 제어
+
     if (prepend) {
         cardsContainer.classList.add('no-animation');
     }
-    
+
     let cardsHTML = `<div class="message-bubble">`;
-    
+
     if (intro) {
         const introP = document.createElement('p');
         introP.className = 'plan-intro-text';
@@ -1330,25 +1444,24 @@ function renderDtoPlanCards(intro, plans, prepend = false) {
     cardsHTML += `<div class="plan-cards-container">`;
 
     plans.forEach(plan => {
-        const dataDisplay = plan.dataAllowance === 99999 ? '무제한' : 
-                            (plan.dataAllowance != null ? `${plan.dataAllowance}${plan.dataAllowanceUnit || 'GB'}` : '정보 없음');
-        
+        const dataDisplay = plan.dataAllowance === 99999 ? '무제한' :
+            (plan.dataAllowance != null ? `${plan.dataAllowance}${plan.dataAllowanceUnit || 'GB'}` : '정보 없음');
+
         const tetheringDisplay = plan.tetheringDataAmount != null ? `${plan.tetheringDataAmount}${plan.tetheringDataUnit || 'GB'}` : '정보 없음';
         const voiceDisplay = plan.voiceAllowance != null ? (plan.voiceAllowance === 0 ? '기본제공' : `${plan.voiceAllowance}분`) : '기본제공';
         const additionalCallDisplay = plan.additionalCallAllowance != null ? `${plan.additionalCallAllowance}분` : '정보 없음';
         const monthlyFeeDisplay = plan.monthlyFee != null ? `${plan.monthlyFee.toLocaleString()}원` : '정보 없음';
 
-        // [MODIFIED] 부가 혜택 표시 HTML 생성 로직
         let benefitsHTML = '';
         if (allBenefitsMap.size > 0 && plan.benefitIdList && plan.benefitIdList.length > 2) { // length > 2는 '[]' 케이스 방지
             try {
                 const benefitIds = JSON.parse(plan.benefitIdList);
                 if (Array.isArray(benefitIds) && benefitIds.length > 0) {
-                    
+
                     const benefitNames = benefitIds
                         .map(id => allBenefitsMap.get(id)) // ID를 이름으로 변환
                         .filter(name => name); // 이름이 없는 경우(null, undefined) 필터링
-                    
+
                     if (benefitNames.length > 0) {
                         benefitsHTML = `
                             <div class="plan-benefits">
@@ -1364,7 +1477,7 @@ function renderDtoPlanCards(intro, plans, prepend = false) {
                 console.error("benefitIdList 파싱 오류:", plan.benefitIdList, e);
             }
         }
-        
+
         cardsHTML += `
             <div class="plan-card">
                 <div class="plan-card-header">
@@ -1385,16 +1498,16 @@ function renderDtoPlanCards(intro, plans, prepend = false) {
             </div>
         `;
     });
-    
+
     cardsHTML += `</div></div>`;
     cardsContainer.innerHTML = cardsHTML;
-    
+
     if (prepend) {
         const loadingIndicator = chatContent.querySelector('.loading-indicator');
         if (loadingIndicator) {
             loadingIndicator.insertAdjacentElement('afterend', cardsContainer);
         } else {
-             chatContent.prepend(cardsContainer);
+            chatContent.prepend(cardsContainer);
         }
     } else {
         const welcomeMessage = chatContent.querySelector('.welcome-message');

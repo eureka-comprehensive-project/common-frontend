@@ -958,3 +958,177 @@ body {
     flex-direction: column;
   }
 }
+/* --- [수정된 부분] 음성 인식 패널 스타일 (왼쪽 하단) --- */
+.stt-modal-overlay {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 10000;
+  /* 화면 전체를 덮지 않도록 변경하고, 클릭이 통과되도록 설정 */
+  pointer-events: none; 
+}
+
+/* .show 클래스는 그대로 사용하여 나타나고 사라지는 것을 제어합니다 */
+.stt-modal-overlay.show .stt-modal {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: auto; /* 패널 자체는 클릭 가능해야 함 */
+}
+
+.stt-modal {
+  background-color: white;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  width: 400px; /* 크기를 약간 줄임 */
+  max-width: 90%;
+  border: 1px solid #dee2e6;
+  
+  /* 나타나는 애니메이션을 scale에서 slide-up으로 변경 */
+  opacity: 0;
+  transform: translateY(20px);
+  transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+}
+
+.stt-modal-header {
+  padding: 16px 20px; /* 패딩 약간 줄임 */
+  border-bottom: 1px solid #e9ecef;
+}
+
+.stt-modal-header h3 {
+  margin: 0;
+  font-size: 16px; /* 폰트 크기 약간 줄임 */
+  font-family: 'Pretendard-Bold', sans-serif;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.stt-modal-body {
+  padding: 20px 20px; /* 패딩 약간 줄임 */
+  text-align: center;
+}
+
+.stt-modal-body p {
+    margin: 0;
+    min-height: 40px; /* 높이 약간 줄임 */
+    font-size: 15px; /* 폰트 크기 약간 줄임 */
+    color: #333;
+    line-height: 1.6;
+    font-family: 'Pretendard-Regular';
+}
+
+.stt-modal-body p.placeholder {
+    color: #6c757d;
+    font-style: italic;
+}
+
+.stt-modal-body p.error {
+    color: #dc3545;
+    font-weight: 500;
+}
+
+
+.stt-modal-footer {
+  padding: 16px 20px; /* 패딩 약간 줄임 */
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  border-top: 1px solid #e9ecef;
+}
+
+.stt-modal-btn {
+  padding: 8px 16px; /* 버튼 패딩 약간 줄임 */
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-family: 'Pretendard-Medium', sans-serif;
+  min-width: 70px; /* 버튼 너비 약간 줄임 */
+  transition: all 0.3s ease;
+}
+
+.stt-cancel-btn {
+  background-color: #f8f9fa;
+  color: #6c757d;
+  border: 1px solid #dee2e6;
+}
+
+.stt-cancel-btn:hover {
+  background-color: #e9ecef;
+}
+
+.stt-send-btn {
+  background: linear-gradient(135deg, #d63384 0%, #ad1457 100%);
+  color: white;
+}
+
+.stt-send-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(214, 51, 132, 0.3);
+}
+/* --- [수정 끝] --- */
+
+.stt-send-btn:disabled {
+    background: #ced4da;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+/* --- [추가 끝] --- */
+/* --- [추가된 부분] 음성 인식 패널 헤더 컨트롤 스타일 --- */
+.stt-modal-header {
+  /* 자식 요소를 absolute 포지셔닝 하기 위한 기준점 */
+  position: relative; 
+  /* 헤더 내부 요소들 간의 간격 조정 */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.stt-header-controls {
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+
+/* 녹음 중 표시 ( pulsing dot ) */
+.recording-indicator {
+  width: 12px;
+  height: 12px;
+  background-color: #dc3545;
+  border-radius: 50%;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(0.9);
+    box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 10px rgba(220, 53, 69, 0);
+  }
+  100% {
+    transform: scale(0.9);
+    box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+  }
+}
+
+/* 헤더 오른쪽 위 재시도 버튼 */
+.stt-retry-btn-corner {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #6c757d;
+  cursor: pointer;
+  padding: 0 5px;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.stt-retry-btn-corner:hover {
+  color: #343a40;
+  transform: rotate(90deg);
+}
+/* --- [추가 끝] --- */

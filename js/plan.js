@@ -42,7 +42,7 @@ function classifyDataSize(dataAllowance) {
   // 10GB 기준으로 대용량/소용량 분류
   if (monthlyDataAmount <= 10) {
     return 'small';  // 소용량
-  } else {
+  } else{
     return 'large';  // 대용량
   }
 }

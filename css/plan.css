@@ -111,7 +111,8 @@ body {
   transform: scaleY(1);
 }
 
-.chat-icon {
+/* 아이콘 스타일 통일 */
+.chat-icon, .plan-icon {
   width: 24px;
   height: 24px;
   display: flex;

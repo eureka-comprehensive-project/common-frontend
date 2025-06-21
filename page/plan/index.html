@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="../../css/plan.css" />
 </head>
 <body>
-    <!-- 사이드바 -->
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <img src="/logo.png" alt="요기U+" class="sidebar-logo" />
@@ -17,38 +16,33 @@
                 <div class="chat-icon">💬</div>
                 챗봇
             </div>
-            <!-- 수정 후 -->
             <div class="sidebar-profile" onclick="toggleProfileMenu()">
-            <div class="profile-avatar" id="userAvatar">👤</div>
-            <div class="profile-text" id="profile-email">사용자님</div>
+                <div class="profile-avatar" id="userAvatar">👤</div>
+                <div class="profile-text" id="profile-email">사용자님</div>
             </div>
         </div>
     </div>
 
-    <!-- 메인 컨텐츠 -->
     <div class="main-content">
-        <!-- 메인 컨테이너 -->
         <div class="container">
-            <!-- 페이지 헤더 -->
             <div class="page-header">
                 <h1>요금제 찾기</h1>
                 <p>나에게 맞는 완벽한 요금제를 찾아보세요</p>
             </div>
 
-            <!-- 탭 네비게이션 -->
             <div class="tab-navigation">
                 <div class="tabs">
                     <div class="tab active" onclick="switchTab(this, 'all')">전체</div>
                     <div class="tab" onclick="switchTab(this, 'premium')">프리미엄</div>
                     <div class="tab" onclick="switchTab(this, 'youth')">유스</div>
                     <div class="tab" onclick="switchTab(this, 'senior')">시니어</div>
+                    <div class="tab" onclick="switchTab(this, 'direct')">다이렉트</div>
                     <div class="tab" onclick="switchTab(this, 'nugget')">너겟</div>
-                    <div class="tab" onclick="switchTab(this, 'teen')">청소년</div>
                     <div class="tab" onclick="switchTab(this, 'welfare')">복지</div>
+                    <div class="tab" onclick="switchTab(this, 'teen')">청소년</div>
                 </div>
             </div>
 
-            <!-- 필터 섹션 -->
             <div class="filter-section">
                 <div class="filter-left">
                     <button class="filter-btn" onclick="openFilterPopup()">
@@ -56,14 +50,11 @@
                         필터
                     </button>
                     <div class="selected-filters" id="selectedFilters">
-                        <!-- 선택된 필터들이 여기에 표시됩니다 -->
-                    </div>
+                        </div>
                 </div>
             </div>
 
-            <!-- 요금제 카드들 -->
             <div class="pricing-cards">
-                <!-- API에서 로드된 요금제들이 여기에 표시됩니다 -->
                 <div class="loading-state">
                     <div class="loading-icon">⏳</div>
                     <p>요금제 정보를 불러오는 중...</p>
@@ -72,7 +63,6 @@
         </div>
     </div>
 
-    <!-- 필터 팝업 -->
     <div class="filter-popup" id="filterPopup">
         <div class="popup-content">
             <div class="popup-header">
@@ -80,21 +70,20 @@
                 <button class="close-btn" onclick="closeFilterPopup()">&times;</button>
             </div>
             <div class="popup-body">
-                <!-- 요금제별 필터 -->
                 <div class="filter-section-popup">
                     <div class="filter-section-title">요금제별</div>
                     <div class="filter-tags">
                         <div class="filter-tag" onclick="toggleTag(this)">프리미엄</div>
                         <div class="filter-tag" onclick="toggleTag(this)">유스</div>
                         <div class="filter-tag" onclick="toggleTag(this)">시니어</div>
+                        <div class="filter-tag" onclick="toggleTag(this)">다이렉트</div>
                         <div class="filter-tag" onclick="toggleTag(this)">너겟</div>
-                        <div class="filter-tag" onclick="toggleTag(this)">청소년</div>
                         <div class="filter-tag" onclick="toggleTag(this)">복지</div>
+                        <div class="filter-tag" onclick="toggleTag(this)">청소년</div>
                         <div class="filter-tag selected" onclick="toggleTag(this)">전체</div>
                     </div>
                 </div>
 
-                <!-- 요금범위 필터 -->
                 <div class="filter-section-popup">
                     <div class="filter-section-title">요금범위</div>
                     <div class="filter-tags">
@@ -105,7 +94,6 @@
                     </div>
                 </div>
 
-                <!-- 데이터 필터 -->
                 <div class="filter-section-popup">
                     <div class="filter-section-title">데이터</div>
                     <div class="filter-tags">
@@ -116,12 +104,10 @@
                     </div>
                 </div>
 
-                <!-- 혜택 필터 -->
                 <div class="filter-section-popup">
                     <div class="filter-section-title">혜택</div>
                     <div class="filter-brands">
-                        <!-- JavaScript로 동적 생성 -->
-                    </div>
+                        </div>
                 </div>
             </div>
             <div class="popup-footer">
@@ -130,7 +116,6 @@
         </div>
     </div>
 
-    <!-- 프로필 팝업 -->
     <div class="profile-popup" id="profilePopup" style="display: none;">    
         <div class="profile-popup-content">
             <div class="profile-popup-body">
@@ -145,6 +130,46 @@
             </div>
         </div>
     </div>
+
+    <div class="benefit-selection-modal" id="benefitSelectionModal">
+        <div class="benefit-modal-content">
+            <div class="benefit-modal-header">
+                <div class="benefit-modal-title">요금제 혜택 선택</div>
+                <div class="benefit-modal-subtitle">각 카테고리에서 원하는 혜택을 하나씩 선택해주세요</div>
+            </div>
+            <div class="benefit-modal-body">
+                <div class="benefit-type-section">
+                    <div class="benefit-type-title">
+                        <span class="icon">💎</span>
+                        프리미엄 혜택
+                    </div>
+                    <div class="benefit-type-description">스트리밍 서비스 등 프리미엄 콘텐츠 혜택</div>
+                    <div class="benefit-options" id="premiumBenefits"></div>
+                </div>
+                <div class="benefit-type-section">
+                    <div class="benefit-type-title">
+                        <span class="icon">🎵</span>
+                        미디어 혜택
+                    </div>
+                    <div class="benefit-type-description">음악, 동영상 등 미디어 콘텐츠 혜택</div>
+                    <div class="benefit-options" id="mediaBenefits"></div>
+                </div>
+                <div class="benefit-type-section">
+                    <div class="benefit-type-title">
+                        <span class="icon">📺</span>
+                        베이직 혜택
+                    </div>
+                    <div class="benefit-type-description">기본 서비스 혜택</div>
+                    <div class="benefit-options" id="basicBenefits"></div>
+                </div>
+            </div>
+            <div class="benefit-modal-footer">
+                <button class="benefit-modal-btn cancel" onclick="closeBenefitSelectionModal()">취소</button>
+                <button class="benefit-modal-btn confirm" onclick="confirmBenefitSelection()">선택 완료</button>
+            </div>
+        </div>
+    </div>
+
     <script src="../../js/plan.js"></script>
 </body>
 </html>

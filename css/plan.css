@@ -437,6 +437,8 @@ body {
   transition: all 0.3s ease;
   border: 1px solid #dee2e6;
   position: relative;
+  display: flex;
+  flex-direction: column;
 }
 
 .new-pricing-card::before {
@@ -489,6 +491,7 @@ body {
   justify-content: space-between;
   align-items: flex-start;
   gap: 24px;
+  flex-grow: 1;
 }
 
 .plan-info {

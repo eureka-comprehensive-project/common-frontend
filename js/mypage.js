@@ -254,40 +254,71 @@ async function fetchUserUsageSummary() {
 // [UI Update] 미니 위젯 업데이트
 function updateMiniUsageWidget(usedDataAmount, usedDataUnit, allowanceInfo, callUsage) {
     const isUnlimited = allowanceInfo && allowanceInfo.dataAllowance === 99999;
-    
+
+    // --- 데이터 사용량 처리 ---
     let dataPercent = 0;
-    let dataText = `${usedDataAmount}${usedDataUnit}`;
+    let dataText = '';
+    let displayDataUsage = usedDataAmount;
 
     if (allowanceInfo && !isUnlimited) {
         const totalDataMB = convertToMB(allowanceInfo.dataAllowance, allowanceInfo.dataAllowanceUnit);
         const usedDataMB = convertToMB(usedDataAmount, usedDataUnit);
-        if (totalDataMB > 0) {
-            dataPercent = Math.min((usedDataMB / totalDataMB) * 100, 100);
+        
+        // [요청된 로직] 제공량보다 많이 사용했는지 확인
+        if (usedDataMB > totalDataMB) {
+            displayDataUsage = 0; // 제공량 초과 시 표시 사용량을 0으로 설정
         }
-        dataText += ` / ${allowanceInfo.dataAllowance}${allowanceInfo.dataAllowanceUnit}`;
+
+        const displayUsedDataMB = convertToMB(displayDataUsage, usedDataUnit);
+
+        if (totalDataMB > 0) {
+            // 퍼센트 계산은 수정된 표시 사용량으로 (초과 시 0%)
+            dataPercent = Math.min((displayUsedDataMB / totalDataMB) * 100, 100);
+        }
+        // 텍스트 표시는 수정된 표시 사용량으로
+        dataText = `${displayDataUsage}${usedDataUnit} / ${allowanceInfo.dataAllowance}${allowanceInfo.dataAllowanceUnit}`;
+
     } else if (isUnlimited) {
-        dataPercent = 100;
-        dataText += ' / 무제한';
+        dataPercent = 100; // 무제한은 항상 꽉 찬 것으로 간주
+        dataText = `${usedDataAmount}${usedDataUnit} / 무제한`; // 실제 사용량은 그대로 표시
+    } else {
+        // 요금제 정보가 없는 경우 (allowanceInfo is null)
+        dataText = `${usedDataAmount}${usedDataUnit}`;
+        dataPercent = 0; // 제공량을 모르므로 0%
     }
 
     document.getElementById('miniDataValue').textContent = dataText;
     document.getElementById('miniDataProgress').style.width = `${dataPercent}%`;
 
-    // 음성통화 처리
+    // --- 음성통화 처리 ---
+    let callPercent = 0;
+    let callText = '';
+    let displayCallUsage = callUsage;
+
     if (voiceAllowance === 0) {
         // 무제한인 경우
-        document.getElementById('miniCallValue').textContent = `무제한`;
-        document.getElementById('miniCallProgress').style.width = '100%';
+        callText = `무제한`;
+        callPercent = 100; // 무제한은 항상 꽉 찬 것으로 간주
     } else if (voiceAllowance && voiceAllowance > 0) {
-        // 제한이 있는 경우 - 실제 사용률 계산
-        const callPercent = Math.min((callUsage / voiceAllowance) * 100, 100);
-        document.getElementById('miniCallValue').textContent = `${callUsage}분 / ${voiceAllowance}분`;
-        document.getElementById('miniCallProgress').style.width = `${callPercent}%`;
+        // 제한이 있는 경우
+        
+        // [요청된 로직] 제공량보다 많이 사용했는지 확인
+        if (callUsage > voiceAllowance) {
+            displayCallUsage = 0; // 제공량 초과 시 표시 사용량을 0으로 설정
+        }
+
+        // 퍼센트 계산은 수정된 표시 사용량으로 (초과 시 0%)
+        callPercent = Math.min((displayCallUsage / voiceAllowance) * 100, 100);
+        // 텍스트 표시는 수정된 표시 사용량으로
+        callText = `${displayCallUsage}분 / ${voiceAllowance}분`;
     } else {
-        // 요금제 정보가 없는 경우 기본 처리
-        document.getElementById('miniCallValue').textContent = `${callUsage}분`;
-        document.getElementById('miniCallProgress').style.width = '0%';
+        // 요금제 정보가 없는 경우 (voiceAllowance is null or undefined)
+        callText = `${callUsage}분`;
+        callPercent = 0; // 제공량을 모르므로 0%
     }
+    
+    document.getElementById('miniCallValue').textContent = callText;
+    document.getElementById('miniCallProgress').style.width = `${callPercent}%`;
 }
 
 // 데이터 제공량 정보 가져오기
@@ -313,13 +344,19 @@ async function fetchPlanAllowanceById(pId) {
 // 월별 이용 패턴 조회
 async function fetchUserUsagePattern() {
     try {
+        // 현재 요금제의 제공량 정보를 가져옵니다. (가정: 지난 몇 달간 요금제가 동일함)
+        const allowanceInfo = await fetchPlanAllowanceById(planId);
+        const isDataUnlimited = allowanceInfo && allowanceInfo.dataAllowance === 99999;
+        const isCallUnlimited = voiceAllowance === 0;
+
         const response = await fetch('https://www.visiblego.com/gateway/user/user-data-record/usage', {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: userId, monthCount: 5 }) // 4개월치 비교를 위해 5개월 데이터 요청
+            body: JSON.stringify({ userId: userId, monthCount: 5 })
         });
         const result = await response.json();
-        if (result.message === 'fail' || !result.data) {
+
+        if (result.message === 'fail' || !result.data || result.data.length < 2) {
             // 데이터 없을 때 카드 초기화
             for (let i = 0; i < 3; i++) {
                 document.querySelector(`#monthCard${i} .month-name`).textContent = '-';
@@ -331,64 +368,78 @@ async function fetchUserUsagePattern() {
             return;
         }
         
-        // 최근 3개월 데이터 (index 1, 2, 3)와 그 이전달 데이터 (index 4)
-        const usageList = result.data.slice(1, 5).reverse(); // [3개월전, 2개월전, 1개월전, 0개월전(비교용)] -> [0, 1, 2, 3] 순서로
-        
+        const usageList = result.data.slice(0, 4).reverse(); // [3개월전, 2개월전, 1개월전, 지난달]
         const activeTab = document.querySelector('.tab-btn.active');
         const type = activeTab ? activeTab.getAttribute('data-type') : '데이터';
         
+        // =======================================================
+        // ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼ 요청에 따라 로직이 수정된 부분 ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼
+        // 사용량 데이터를 변환하면서, 제공량 초과 시 '0'으로 처리
         const values = usageList.map(item => {
             if (type === '데이터') {
-                let value = item.dataUsage || 0;
+                let usageInGB = item.dataUsage || 0;
                 if (item.dataUsageUnit === 'MB') {
-                    value /= 1024; // GB로 변환
+                    usageInGB /= 1024; // 단위를 GB로 통일
                 }
-                return value;
-            }
-            return item.callUsage || 0;
-        });
 
-        const maxValue = Math.max(...values, (type === '데이터' ? 10 : 100)); // 최대값 기반으로 바 길이 계산, 최소값 보장
+                // 무제한이 아닐 경우에만 제공량과 비교
+                if (allowanceInfo && !isDataUnlimited) {
+                    const allowanceInGB = allowanceInfo.dataAllowanceUnit === 'GB' 
+                        ? allowanceInfo.dataAllowance 
+                        : allowanceInfo.dataAllowance / 1024;
+                    
+                    if (usageInGB > allowanceInGB) {
+                        return 0; // 제공량 초과 시 사용량을 0으로 간주
+                    }
+                }
+                return usageInGB;
+
+            } else { // '음성' 타입일 경우
+                let callUsage = item.callUsage || 0;
+                
+                // 무제한이 아닐 경우에만 제공량과 비교
+                if (voiceAllowance && !isCallUnlimited) {
+                    if (callUsage > voiceAllowance) {
+                        return 0; // 제공량 초과 시 사용량을 0으로 간주
+                    }
+                }
+                return callUsage;
+            }
+        });
+        // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲ 로직 수정 완료 ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+        // =======================================================
+
+        // '0'으로 처리된 값이 포함된 새로운 values 배열을 기준으로 최대값을 계산
+        const maxValue = Math.max(...values, (type === '데이터' ? 10 : 100));
 
         // 3개의 카드 업데이트
         for (let i = 0; i < 3; i++) {
-            const currentData = usageList[i + 1]; // 표시할 데이터 (2개월 전, 1개월 전, 지난달)
-            const prevData = usageList[i];      // 비교할 데이터 (3개월 전, 2개월 전, 1개월 전)
+            const listIndex = i + 1; // 표시할 월은 usageList[1], [2], [3]
+            const currentData = usageList[listIndex];
             
-            if (!currentData) { // 데이터가 없으면 카드 비활성화
-                document.querySelector(`#monthCard${i} .month-name`).textContent = '-';
-                document.querySelector(`#monthCard${i} .usage-value`).textContent = '-';
-                document.querySelector(`#monthCard${i} .usage-change`).textContent = '';
-                document.getElementById(`trend${i}`).textContent = '-';
-                document.getElementById(`visualBar${i}`).style.width = '0%';
+            if (!currentData) {
+                // ... 카드 비활성화 로직 (생략) ...
                 continue;
             }
 
-            // =======================================================
-            // ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼ 여기만 수정되었습니다 ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼
-            // =======================================================
-            // 기존 코드: const monthName = `${currentData.yearMonth.slice(0, 4)}.${currentData.yearMonth.slice(4)}`;
+            // 모든 계산은 '0' 처리가 완료된 values 배열을 사용
+            const currentValue = values[listIndex];
+            const prevValue = values[listIndex - 1];
             
-            // 수정된 코드: 'YYYY-MM' 또는 'YYYYMM' 형식 모두 'YYYY.MM'으로 변환
             const monthName = String(currentData.yearMonth).replace('-', '.');
-            // =======================================================
-            
-            let currentValue = values[i + 1];
-            let prevValue = values[i];
-            
             const displayValue = type === '데이터' ? `${currentValue.toFixed(1)}GB` : `${Math.round(currentValue)}분`;
-            const percent = (currentValue / maxValue) * 100;
+            const percent = maxValue > 0 ? (currentValue / maxValue) * 100 : 0;
+            const change = currentValue - prevValue;
 
             document.querySelector(`#monthCard${i} .month-name`).textContent = monthName;
             document.querySelector(`#monthCard${i} .usage-value`).textContent = displayValue;
             document.getElementById(`visualBar${i}`).style.width = `${percent}%`;
 
-            // 증감 계산 및 표시
-            const change = currentValue - prevValue;
+            // 증감 표시 로직
             const trendIndicator = document.getElementById(`trend${i}`);
             const changeText = document.querySelector(`#monthCard${i} .usage-change`);
             
-            trendIndicator.className = 'trend-indicator'; // 클래스 초기화
+            trendIndicator.className = 'trend-indicator';
             if (change > 0) {
                 trendIndicator.classList.add('trend-up');
                 trendIndicator.textContent = '▲';

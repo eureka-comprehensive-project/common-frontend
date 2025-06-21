@@ -578,6 +578,7 @@ function displayWelcomeMessage() {
                     </li>
                 </ul>
             </div>
+            <p class="start-prompt">⚠️ 다른 대화로 넘어가고 싶다면, '끝'이라고 입력해주세요!⚠️</p>
             <p class="start-prompt">아래 입력창에 궁금한 점을 직접 입력하거나 추천 질문을 눌러보세요!</p>
         </div>
     `;

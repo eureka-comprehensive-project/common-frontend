@@ -143,7 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
             setLoading(true);
             
             // AdminCommon의 apiGet 함수 사용
-            const result = await window.AdminCommon.apiGet('/admin/allow-words/forbidden-words');
+            const result = await window.AdminCommon.apiGet('/admin/allow-words');
             
             // 응답 데이터 파싱
             let forbiddenWords = [];
@@ -213,7 +213,7 @@ document.addEventListener('DOMContentLoaded', () => {
      */
     async function addForbiddenWord(word, isUsed) {
         try {
-            await window.AdminCommon.apiPost('/admin/allow-words/forbidden-words', {
+            await window.AdminCommon.apiPost('/admin/allow-words', {
                 word,
                 used: isUsed
             });
@@ -240,7 +240,7 @@ document.addEventListener('DOMContentLoaded', () => {
      */
     async function deleteForbiddenWord(wordId) {
         try {
-            await window.AdminCommon.apiDelete(`/admin/allow-words/forbidden-words/${wordId}`);
+            await window.AdminCommon.apiDelete(`/admin/allow-words/${wordId}`);
             return true;
         } catch (error) {
             console.error('예외 금칙어 삭제 오류:', error);
@@ -255,7 +255,7 @@ document.addEventListener('DOMContentLoaded', () => {
      */
     async function toggleWordStatus(wordId) {
         try {
-            await window.AdminCommon.apiPatch(`/admin/allow-words/forbidden-words/${wordId}/status-change`);
+            await window.AdminCommon.apiPatch(`/admin/allow-words/${wordId}/status-change`);
             return true;
         } catch (error) {
             console.error('예외 금칙어 상태 변경 오류:', error);

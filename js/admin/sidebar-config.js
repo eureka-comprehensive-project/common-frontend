@@ -38,6 +38,8 @@ function getCurrentPageId() {
         return 'forbidden-words';
     } else if (path.includes('/page/admin/user-management/')) {
         return 'user-management';
+    } else if (path.includes('/page/admin/allow-words/')) {
+        return 'allow-words';
     }
     
     // 매칭되지 않는 경우 null 반환 (아무것도 선택되지 않음)
@@ -238,6 +240,10 @@ function getPageTitleInfo(pageId) {
         'user-management': {
             title: '사용자 관리',
             subtitle: '등록된 사용자를 검색하고 관리합니다'
+        },
+        'allow-words': {
+            title: '예외 금칙어 관리',
+            subtitle: '금칙어가 아니지만, 금칙어가 포함되어 있는 단어를 관리하고 모니터링합니다'
         }
     };
     

@@ -1131,4 +1131,41 @@ body {
   color: #343a40;
   transform: rotate(90deg);
 }
-/* --- [추가 끝] --- */
+
+/* --- [추가된 부분] 추천 이유 정보 상자 스타일 --- */
+.recommendation-reason {
+  background-color: #fdf2f3; /* 테마에 맞는 연한 핑크 배경 */
+  border-left: 4px solid #d63384; /* 테마 색상으로 강조 */
+  padding: 12px 16px;
+  margin: 16px 0 8px 0; /* 위아래 여백 */
+  border-radius: 8px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px; /* 아이콘과 텍스트 사이 간격 */
+}
+
+.recommendation-reason .reason-icon {
+  font-size: 18px;
+  color: #d63384;
+  flex-shrink: 0; /* 아이콘이 찌그러지지 않도록 설정 */
+  padding-top: 1px; /* 텍스트와 수직 정렬 미세 조정 */
+}
+
+.recommendation-reason p {
+  margin: 0;
+  font-size: 13px;
+  color: #5a6268;
+  line-height: 1.6;
+  font-family: 'Pretendard-Regular';
+}
+
+.chat-input-section.input-disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.chat-input-section.input-disabled .chat-input,
+.chat-input-section.input-disabled .send-button,
+.chat-input-section.input-disabled .mic-button {
+  pointer-events: none; /* 클릭 이벤트를 막음 */
+}

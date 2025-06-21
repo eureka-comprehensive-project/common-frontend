@@ -604,13 +604,16 @@ function displayWelcomeMessage() {
     updateChatHeader('새로운 대화');
 }
 
-// 메시지 전송 함수
+
 async function sendMessage() {
     const messageInput = document.getElementById('messageInput');
     const message = messageInput.value.trim();
 
     if (!message) return;
 
+    // --- [수정] 응답 전까지 입력창 비활성화 ---
+    disableChatInput();
+    
     addMessageToChat('user', message);
     messageInput.value = '';
 
@@ -627,9 +630,7 @@ async function sendMessage() {
                     'Authorization': `Bearer ${accessToken}`,
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    userId: userId
-                })
+                body: JSON.stringify({ userId: userId })
             });
 
             if (!createRoomResponse.ok) {
@@ -639,7 +640,6 @@ async function sendMessage() {
             const createRoomResult = await createRoomResponse.json();
             if (createRoomResult && createRoomResult.data && createRoomResult.data.chatRoomId) {
                 currentChatId = createRoomResult.data.chatRoomId;
-
                 if (!chatRoomStates[currentChatId]) {
                     chatRoomStates[currentChatId] = {
                         oldestMessageId: null,
@@ -675,26 +675,19 @@ async function sendMessage() {
 
         if (result && result.data) {
             const botResponse = result.data;
-
             if (botResponse.isPlanShow === true) {
                 let messageContent = botResponse.message;
                 if (messageContent.startsWith('[')) {
                     messageContent = messageContent.substring(1);
                 }
-                const {
-                    intro,
-                    plans
-                } = parseDtoPlans(messageContent);
+                const { intro, plans } = parseDtoPlans(messageContent);
                 renderDtoPlanCards(intro, plans, false);
             } else if (botResponse.isRecommended === true) {
                 let messageContent = botResponse.message;
                 if (messageContent.startsWith('[')) {
                     messageContent = messageContent.substring(1);
                 }
-                const {
-                    intro,
-                    plans
-                } = parseTextPlans(messageContent);
+                const { intro, plans } = parseTextPlans(messageContent);
                 renderTextPlanCards(intro, plans, false, true);
             } else {
                 addMessageToChat('bot', botResponse.message);
@@ -709,29 +702,23 @@ async function sendMessage() {
             if (noChatsMessage) {
                 noChatsMessage.remove();
             }
-
             document.querySelectorAll('.chat-item.active').forEach(item => item.classList.remove('active'));
-
             const newChatRoomId = currentChatId;
-
             const chatItem = document.createElement('div');
             chatItem.className = 'chat-item active';
             chatItem.dataset.chatId = newChatRoomId;
             chatItem.onclick = () => selectChat(newChatRoomId);
-
             const creationDate = new Date();
             const year = creationDate.getFullYear();
             const month = String(creationDate.getMonth() + 1).padStart(2, '0');
             const day = String(creationDate.getDate()).padStart(2, '0');
             const formattedDate = `${year}/${month}/${day}`;
-
             chatItem.innerHTML = `
                 <div class="chat-item-content">
                     <span class="chat-item-title">${message}</span>
                     <span class="chat-item-date">${formattedDate}</span>
                 </div>
             `;
-
             chatListContainer.prepend(chatItem);
             updateChatHeader(message);
         }
@@ -744,6 +731,9 @@ async function sendMessage() {
             currentChatId = null;
             updateChatHeader('새로운 대화');
         }
+    } finally {
+        // --- [수정] 성공/실패 여부와 관계없이 항상 입력창 활성화 ---
+        enableChatInput();
     }
 }
 
@@ -1283,6 +1273,9 @@ function handleFeedbackClick(buttonElement, feedbackText, displayText) {
 async function sendFeedbackToServer(feedbackMessage) {
     if (!feedbackMessage || !currentChatId) return;
 
+    // --- [수정] 응답 전까지 입력창 비활성화 ---
+    disableChatInput();
+
     const loadingMessageId = addMessageToChat('bot', '응답을 처리중입니다...');
 
     try {
@@ -1308,26 +1301,19 @@ async function sendFeedbackToServer(feedbackMessage) {
 
         if (result && result.data && result.data.message) {
             const botResponse = result.data;
-
             if (botResponse.isPlanShow === true) {
                 let messageContent = botResponse.message;
                 if (messageContent.startsWith('[')) {
                     messageContent = messageContent.substring(1);
                 }
-                const {
-                    intro,
-                    plans
-                } = parseDtoPlans(messageContent);
+                const { intro, plans } = parseDtoPlans(messageContent);
                 renderDtoPlanCards(intro, plans, false);
             } else if (botResponse.isRecommended === true) {
                 let messageContent = botResponse.message;
                 if (messageContent.startsWith('[')) {
                     messageContent = messageContent.substring(1);
                 }
-                const {
-                    intro,
-                    plans
-                } = parseTextPlans(messageContent);
+                const { intro, plans } = parseTextPlans(messageContent);
                 renderTextPlanCards(intro, plans, false, true);
             } else {
                 addMessageToChat('bot', botResponse.message);
@@ -1340,6 +1326,9 @@ async function sendFeedbackToServer(feedbackMessage) {
         console.error('피드백 전송 실패:', error);
         removeMessage(loadingMessageId);
         addMessageToChat('bot', '죄송합니다. 피드백 처리 중 오류가 발생했습니다.');
+    } finally {
+        // --- [수정] 성공/실패 여부와 관계없이 항상 입력창 활성화 ---
+        enableChatInput();
     }
 }
 
@@ -1347,16 +1336,32 @@ function renderTextPlanCards(intro, plans, prepend = false, showFeedback = false
     const chatContent = document.getElementById('chatContent');
     const cardsContainer = document.createElement('div');
     cardsContainer.className = 'message bot';
-
+    
     if (prepend) {
         cardsContainer.classList.add('no-animation');
     }
+    
+    let introHTML = '';
+    // intro 텍스트에 대괄호가 있는지 확인하고 파싱
+    if (intro && intro.includes('[') && intro.includes(']')) {
+        const mainText = intro.substring(0, intro.indexOf('[')).trim();
+        const reasonText = intro.substring(intro.indexOf('[') + 1, intro.lastIndexOf(']')).trim();
+
+        introHTML = `
+            <p class="plan-intro-text">${mainText}</p>
+            <div class="recommendation-reason">
+                <span class="reason-icon">💡</span>
+                <p>${reasonText}</p>
+            </div>
+        `;
+    } else if (intro) {
+        // 대괄호가 없는 일반적인 intro 텍스트 처리
+        introHTML = `<p class="plan-intro-text">${intro}</p>`;
+    }
 
     let cardsHTML = `<div class="message-bubble">`;
+    cardsHTML += introHTML; // 생성된 intro HTML 삽입
 
-    if (intro) {
-        cardsHTML += `<p class="plan-intro-text">${intro}</p>`;
-    }
     cardsHTML += `<div class="plan-cards-container">`;
     plans.forEach(plan => {
         cardsHTML += `
@@ -1517,4 +1522,33 @@ function renderDtoPlanCards(intro, plans, prepend = false) {
         chatContent.appendChild(cardsContainer);
         smoothScrollToBottom();
     }
+}
+/**
+ * 채팅 입력창을 비활성화하는 함수
+ */
+function disableChatInput() {
+    const inputSection = document.querySelector('.chat-input-section');
+    const messageInput = document.getElementById('messageInput');
+    const sendButton = document.querySelector('.send-button');
+    const micButton = document.querySelector('.mic-button');
+
+    inputSection.classList.add('input-disabled');
+    messageInput.disabled = true;
+    sendButton.disabled = true;
+    micButton.disabled = true;
+}
+
+/**
+ * 채팅 입력창을 다시 활성화하는 함수
+ */
+function enableChatInput() {
+    const inputSection = document.querySelector('.chat-input-section');
+    const messageInput = document.getElementById('messageInput');
+    const sendButton = document.querySelector('.send-button');
+    const micButton = document.querySelector('.mic-button');
+
+    inputSection.classList.remove('input-disabled');
+    messageInput.disabled = false;
+    sendButton.disabled = false;
+    micButton.disabled = false;
 }

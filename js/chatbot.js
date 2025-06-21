@@ -584,8 +584,8 @@ function displayWelcomeMessage() {
         button.textContent = text;
         
         button.onclick = () => {
-            messageInput.value = text;
-            messageInput.focus();
+            messageInput.value = text;
+            sendMessage();
         };
         
         suggestionContainer.appendChild(button);

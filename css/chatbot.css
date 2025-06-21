@@ -25,7 +25,6 @@
   box-sizing: border-box;
 }
 
-/* --- [수정된 부분] --- */
 body {
   font-family: 'Pretendard-Regular', sans-serif;
   background: #ffffff;
@@ -33,7 +32,6 @@ body {
   height: 100vh; /* min-height를 height로 변경 */
   overflow: hidden; /* overflow-y: scroll을 hidden으로 변경 */
 }
-/* --- [수정 끝] --- */
 
 
 /* 사이드바 (plan과 동일) */
@@ -958,7 +956,6 @@ body {
     flex-direction: column;
   }
 }
-/* --- [수정된 부분] 음성 인식 패널 스타일 (왼쪽 하단) --- */
 .stt-modal-overlay {
   position: fixed;
   bottom: 20px;

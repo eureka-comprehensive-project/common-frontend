@@ -13,10 +13,8 @@ let isLoadingMoreChatRooms = false;
 let allChatRoomsLoaded = false;
 const CHAT_LIST_PAGE_SIZE = 20;
 
-// --- [수정된 부분] 음성 인식 관련 변수 ---
 let recognition = null;
 let isRecognizing = false;
-// --- [수정 끝] ---
 
 // 부가 혜택 정보를 저장할 Map
 let allBenefitsMap = new Map();
@@ -669,7 +667,6 @@ async function sendMessage() {
             } else {
                 addMessageToChat('bot', botResponse.message);
             }
-            // --- [수정된 부분 끝] ---
 
         } else {
             addMessageToChat('bot', '응답을 받을 수 없습니다.');
@@ -811,7 +808,6 @@ function removeMessage(messageId) {
     }
 }
 
-// --- [새로 추가 및 수정된 음성인식 관련 함수들] ---
 
 // 음성 녹음 시작 (마이크 버튼 클릭시 호출)
 function startRecording() {
@@ -1019,7 +1015,6 @@ function stopRecognition() {
     isRecognizing = false;
     document.querySelector('.mic-button').innerHTML = "🎙️";
 }
-// --- [음성인식 함수 수정 끝] ---
 
 
 // 키보드 이벤트 처리
@@ -1256,7 +1251,6 @@ async function sendFeedbackToServer(feedbackMessage) {
         if (result && result.data && result.data.message) {
             const botResponse = result.data;
             
-            // --- [수정된 부분 시작] ---
             if (botResponse.message && botResponse.message.startsWith('GetUserProfileDetailResponseDto(')) {
                 const dtoEndIndex = botResponse.message.lastIndexOf(')');
                 const dto_string = botResponse.message.substring(0, dtoEndIndex + 1);
@@ -1514,7 +1508,6 @@ function enableChatInput() {
     sendButton.disabled = false;
     micButton.disabled = false;
 }
-// 이 새로운 함수 두 개를 chatbot.js 파일에 추가하세요.
 
 /**
  * GetUserProfileDetailResponseDto 문자열을 파싱하여 객체로 변환하는 함수

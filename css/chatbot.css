@@ -1067,7 +1067,6 @@ body {
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(214, 51, 132, 0.3);
 }
-/* --- [수정 끝] --- */
 
 .stt-send-btn:disabled {
     background: #ced4da;
@@ -1075,8 +1074,6 @@ body {
     transform: none;
     box-shadow: none;
 }
-/* --- [추가 끝] --- */
-/* --- [추가된 부분] 음성 인식 패널 헤더 컨트롤 스타일 --- */
 .stt-modal-header {
   /* 자식 요소를 absolute 포지셔닝 하기 위한 기준점 */
   position: relative; 
@@ -1132,7 +1129,6 @@ body {
   transform: rotate(90deg);
 }
 
-/* --- [추가된 부분] 추천 이유 정보 상자 스타일 --- */
 .recommendation-reason {
   background-color: #fdf2f3; /* 테마에 맞는 연한 핑크 배경 */
   border-left: 4px solid #d63384; /* 테마 색상으로 강조 */
@@ -1168,4 +1164,57 @@ body {
 .chat-input-section.input-disabled .send-button,
 .chat-input-section.input-disabled .mic-button {
   pointer-events: none; /* 클릭 이벤트를 막음 */
+}
+
+.message.bot .profile-card {
+  width: 100%;
+  max-width: 450px;
+  background-color: #ffffff;
+  border: 1px solid #dee2e6;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  margin-bottom: 8px; /* 후속 메시지와의 간격 */
+  overflow: hidden; /* border-radius 적용을 위해 */
+}
+
+.profile-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 20px;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.profile-card-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-family: 'Pretendard-Bold', sans-serif;
+  color: #333;
+}
+
+.profile-card-body {
+  padding: 20px;
+}
+
+.profile-info-row {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  color: #333;
+  margin-bottom: 16px;
+}
+
+.profile-info-row:last-child {
+  margin-bottom: 0;
+}
+
+.profile-info-label {
+  width: 90px;
+  flex-shrink: 0;
+  color: #5a6268;
+  font-family: 'Pretendard-Medium', sans-serif;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }

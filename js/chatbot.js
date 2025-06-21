@@ -608,90 +608,69 @@ function displayWelcomeMessage() {
 async function sendMessage() {
     const messageInput = document.getElementById('messageInput');
     const message = messageInput.value.trim();
-
     if (!message) return;
-
-    // --- [수정] 응답 전까지 입력창 비활성화 ---
     disableChatInput();
-    
     addMessageToChat('user', message);
     messageInput.value = '';
-
     const loadingMessageId = addMessageToChat('bot', '응답을 처리중입니다...');
     let isNewChat = false;
-
     try {
         if (!currentChatId) {
             isNewChat = true;
-            console.log("새 채팅방 생성을 요청합니다.");
             const createRoomResponse = await fetch('https://www.visiblego.com/gateway/chatbot/create-chat-room', {
                 method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${accessToken}`,
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json', },
                 body: JSON.stringify({ userId: userId })
             });
-
-            if (!createRoomResponse.ok) {
-                throw new Error(`채팅방 생성 실패: ${createRoomResponse.status}`);
-            }
-
+            if (!createRoomResponse.ok) throw new Error(`채팅방 생성 실패: ${createRoomResponse.status}`);
             const createRoomResult = await createRoomResponse.json();
             if (createRoomResult && createRoomResult.data && createRoomResult.data.chatRoomId) {
                 currentChatId = createRoomResult.data.chatRoomId;
                 if (!chatRoomStates[currentChatId]) {
-                    chatRoomStates[currentChatId] = {
-                        oldestMessageId: null,
-                        allHistoryLoaded: false,
-                        isLoadingMoreMessages: false
-                    };
+                    chatRoomStates[currentChatId] = { oldestMessageId: null, allHistoryLoaded: false, isLoadingMoreMessages: false };
                 }
-                console.log(`새 채팅방 생성 완료: ID = ${currentChatId}`);
             } else {
                 throw new Error('채팅방 ID를 받아오지 못했습니다.');
             }
         }
-
         const response = await fetch('https://www.visiblego.com/gateway/chatbot/api/chat', {
             method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${accessToken}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                userId: userId,
-                chatRoomId: currentChatId,
-                message: message
-            })
+            headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json', },
+            body: JSON.stringify({ userId: userId, chatRoomId: currentChatId, message: message })
         });
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const result = await response.json();
         removeMessage(loadingMessageId);
 
         if (result && result.data) {
             const botResponse = result.data;
-            if (botResponse.isPlanShow === true) {
+
+            // --- [수정된 부분 시작] ---
+            if (botResponse.message && botResponse.message.startsWith('GetUserProfileDetailResponseDto(')) {
+                const dtoEndIndex = botResponse.message.lastIndexOf(')');
+                const dto_string = botResponse.message.substring(0, dtoEndIndex + 1);
+                const followUpText = botResponse.message.substring(dtoEndIndex + 1).trim();
+                
+                const profileData = parseUserProfileDto(dto_string);
+                renderUserProfileCard(profileData, followUpText);
+
+            } else if (botResponse.isPlanShow === true) {
                 let messageContent = botResponse.message;
-                if (messageContent.startsWith('[')) {
-                    messageContent = messageContent.substring(1);
-                }
+                if (messageContent.startsWith('[')) messageContent = messageContent.substring(1);
                 const { intro, plans } = parseDtoPlans(messageContent);
                 renderDtoPlanCards(intro, plans, false);
+
             } else if (botResponse.isRecommended === true) {
                 let messageContent = botResponse.message;
-                if (messageContent.startsWith('[')) {
-                    messageContent = messageContent.substring(1);
-                }
+                if (messageContent.startsWith('[')) messageContent = messageContent.substring(1);
                 const { intro, plans } = parseTextPlans(messageContent);
                 renderTextPlanCards(intro, plans, false, true);
+
             } else {
                 addMessageToChat('bot', botResponse.message);
             }
+            // --- [수정된 부분 끝] ---
+
         } else {
             addMessageToChat('bot', '응답을 받을 수 없습니다.');
         }
@@ -699,9 +678,7 @@ async function sendMessage() {
         if (isNewChat) {
             const chatListContainer = document.getElementById('chatList');
             const noChatsMessage = chatListContainer.querySelector('.no-chats');
-            if (noChatsMessage) {
-                noChatsMessage.remove();
-            }
+            if (noChatsMessage) noChatsMessage.remove();
             document.querySelectorAll('.chat-item.active').forEach(item => item.classList.remove('active'));
             const newChatRoomId = currentChatId;
             const chatItem = document.createElement('div');
@@ -713,16 +690,10 @@ async function sendMessage() {
             const month = String(creationDate.getMonth() + 1).padStart(2, '0');
             const day = String(creationDate.getDate()).padStart(2, '0');
             const formattedDate = `${year}/${month}/${day}`;
-            chatItem.innerHTML = `
-                <div class="chat-item-content">
-                    <span class="chat-item-title">${message}</span>
-                    <span class="chat-item-date">${formattedDate}</span>
-                </div>
-            `;
+            chatItem.innerHTML = `<div class="chat-item-content"><span class="chat-item-title">${message}</span><span class="chat-item-date">${formattedDate}</span></div>`;
             chatListContainer.prepend(chatItem);
             updateChatHeader(message);
         }
-
     } catch (error) {
         console.error('메시지 전송 실패:', error);
         removeMessage(loadingMessageId);
@@ -732,7 +703,6 @@ async function sendMessage() {
             updateChatHeader('새로운 대화');
         }
     } finally {
-        // --- [수정] 성공/실패 여부와 관계없이 항상 입력창 활성화 ---
         enableChatInput();
     }
 }
@@ -1272,62 +1242,54 @@ function handleFeedbackClick(buttonElement, feedbackText, displayText) {
 
 async function sendFeedbackToServer(feedbackMessage) {
     if (!feedbackMessage || !currentChatId) return;
-
-    // --- [수정] 응답 전까지 입력창 비활성화 ---
     disableChatInput();
-
     const loadingMessageId = addMessageToChat('bot', '응답을 처리중입니다...');
-
     try {
         const response = await fetch('https://www.visiblego.com/gateway/chatbot/api/chat', {
             method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${accessToken}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                userId: userId,
-                chatRoomId: currentChatId,
-                message: feedbackMessage
-            })
+            headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json', },
+            body: JSON.stringify({ userId: userId, chatRoomId: currentChatId, message: feedbackMessage })
         });
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const result = await response.json();
         removeMessage(loadingMessageId);
-
         if (result && result.data && result.data.message) {
             const botResponse = result.data;
-            if (botResponse.isPlanShow === true) {
+            
+            // --- [수정된 부분 시작] ---
+            if (botResponse.message && botResponse.message.startsWith('GetUserProfileDetailResponseDto(')) {
+                const dtoEndIndex = botResponse.message.lastIndexOf(')');
+                const dto_string = botResponse.message.substring(0, dtoEndIndex + 1);
+                const followUpText = botResponse.message.substring(dtoEndIndex + 1).trim();
+
+                const profileData = parseUserProfileDto(dto_string);
+                renderUserProfileCard(profileData, followUpText);
+
+            } else if (botResponse.isPlanShow === true) {
                 let messageContent = botResponse.message;
-                if (messageContent.startsWith('[')) {
-                    messageContent = messageContent.substring(1);
-                }
+                if (messageContent.startsWith('[')) messageContent = messageContent.substring(1);
                 const { intro, plans } = parseDtoPlans(messageContent);
                 renderDtoPlanCards(intro, plans, false);
+
             } else if (botResponse.isRecommended === true) {
                 let messageContent = botResponse.message;
-                if (messageContent.startsWith('[')) {
-                    messageContent = messageContent.substring(1);
-                }
+                if (messageContent.startsWith('[')) messageContent = messageContent.substring(1);
                 const { intro, plans } = parseTextPlans(messageContent);
                 renderTextPlanCards(intro, plans, false, true);
+                
             } else {
                 addMessageToChat('bot', botResponse.message);
             }
+            // --- [수정된 부분 끝] ---
+
         } else {
             addMessageToChat('bot', '피드백에 대한 응답을 받지 못했습니다.');
         }
-
     } catch (error) {
         console.error('피드백 전송 실패:', error);
         removeMessage(loadingMessageId);
         addMessageToChat('bot', '죄송합니다. 피드백 처리 중 오류가 발생했습니다.');
     } finally {
-        // --- [수정] 성공/실패 여부와 관계없이 항상 입력창 활성화 ---
         enableChatInput();
     }
 }
@@ -1551,4 +1513,96 @@ function enableChatInput() {
     messageInput.disabled = false;
     sendButton.disabled = false;
     micButton.disabled = false;
+}
+// 이 새로운 함수 두 개를 chatbot.js 파일에 추가하세요.
+
+/**
+ * GetUserProfileDetailResponseDto 문자열을 파싱하여 객체로 변환하는 함수
+ * @param {string} dto_string - DTO 형태의 전체 문자열
+ * @returns {object} - 파싱된 사용자 정보 객체
+ */
+function parseUserProfileDto(dto_string) {
+    const profileData = {};
+    // 괄호 안의 내용만 추출
+    const content = dto_string.substring(dto_string.indexOf('(') + 1, dto_string.lastIndexOf(')'));
+    
+    // 쉼표와 공백을 기준으로 각 필드를 분리
+    const pairs = content.split(', ');
+
+    pairs.forEach(pair => {
+        const [key, value] = pair.split('=');
+        if (key && value) {
+            profileData[key.trim()] = value.trim() === 'null' ? null : value.trim();
+        }
+    });
+    return profileData;
+}
+
+/**
+ * 파싱된 사용자 정보로 프로필 카드를 생성하고 채팅창에 표시하는 함수
+ * @param {object} profileData - 사용자 정보 객체
+ * @param {string} followUpText - 카드 뒤에 이어질 일반 텍스트 메시지
+ */
+function renderUserProfileCard(profileData, followUpText) {
+    const chatContent = document.getElementById('chatContent');
+
+    // 전화번호 포맷팅 (01012345678 -> 010-1234-5678)
+    const formatPhone = (phone) => {
+        if (!phone || phone.length !== 11) return phone;
+        return `${phone.substring(0, 3)}-${phone.substring(3, 7)}-${phone.substring(7)}`;
+    };
+
+    // 날짜 포맷팅 (타임스탬프 -> YYYY년 MM월 DD일)
+    const formatDate = (dateString) => {
+        if (!dateString) return '정보 없음';
+        const date = new Date(dateString);
+        return `${date.getFullYear()}년 ${String(date.getMonth() + 1).padStart(2, '0')}월 ${String(date.getDate()).padStart(2, '0')}일`;
+    };
+
+    const cardHTML = `
+        <div class="message bot no-animation">
+            <div class="profile-card">
+                <div class="profile-card-header">
+                    <h3>👤 내 정보</h3>
+                </div>
+                <div class="profile-card-body">
+                    <div class="profile-info-row">
+                        <span class="profile-info-label">📧 이 름</span>
+                        <span>${profileData.name || '정보 없음'}</span>
+                    </div>
+                    <div class="profile-info-row">
+                        <span class="profile-info-label">👤 이메일</span>
+                        <span>${profileData.email || '정보 없음'}</span>
+                    </div>
+                    <div class="profile-info-row">
+                        <span class="profile-info-label">📞 연락처</span>
+                        <span>${formatPhone(profileData.phone) || '정보 없음'}</span>
+                    </div>
+                    <div class="profile-info-row">
+                        <span class="profile-info-label">🎂 생년월일</span>
+                        <span>${profileData.birthday || '정보 없음'}</span>
+                    </div>
+                    <div class="profile-info-row">
+                        <span class="profile-info-label">🗓️ 가입일</span>
+                        <span>${formatDate(profileData.createdAt)}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // 기존의 환영 메시지 등이 있다면 제거
+    const welcomeMessage = chatContent.querySelector('.welcome-message');
+    if (welcomeMessage) {
+        chatContent.innerHTML = '';
+    }
+
+    chatContent.insertAdjacentHTML('beforeend', cardHTML);
+    
+    // 후속 질문이 있다면 일반 메시지로 추가
+    if (followUpText) {
+        addMessageToChat('bot', followUpText);
+    }
+    
+    smoothScrollToBottom();
 }

@@ -383,6 +383,8 @@ async function loadChatContent(chatId) {
             }
 
             result.data.forEach(msg => {
+                console.log(msg);
+                
                 if (msg.bot) {
                     if (msg.planShow === true) {
                         let messageContent = msg.content;
@@ -404,6 +406,14 @@ async function loadChatContent(chatId) {
                             plans
                         } = parseTextPlans(messageContent);
                         renderTextPlanCards(intro, plans, false, false);
+                    } else if (msg && msg.content.startsWith('GetUserProfileDetailResponseDto(')) {
+                        const dtoEndIndex = msg.content.lastIndexOf(')');
+                        const dto_string = msg.content.substring(0, dtoEndIndex + 1);
+                        const followUpText = msg.content.substring(dtoEndIndex + 1).trim();
+                        
+                        const profileData = parseUserProfileDto(dto_string);
+                        renderUserProfileCard(profileData, followUpText);
+
                     } else {
                         addMessageToChat('bot', msg.content, msg.timestamp, true); // 애니메이션 없음
                     }
@@ -492,6 +502,7 @@ async function loadMoreChatContent() {
                 const msg = result.data[i];
 
                 if (msg.bot) {
+
                     if (msg.planShow === true) {
                         let messageContent = msg.content;
                         if (messageContent.startsWith('[')) {
@@ -502,6 +513,15 @@ async function loadMoreChatContent() {
                             plans
                         } = parseDtoPlans(messageContent);
                         renderDtoPlanCards(intro, plans, true);
+                        
+                    } else if (msg && msg.content.startsWith('GetUserProfileDetailResponseDto(')) {
+                        const dtoEndIndex = msg.content.lastIndexOf(')');
+                        const dto_string = msg.content.substring(0, dtoEndIndex + 1);
+                        const followUpText = msg.content.substring(dtoEndIndex + 1).trim();
+                        
+                        const profileData = parseUserProfileDto(dto_string);
+                        renderUserProfileCard(profileData, followUpText, true);
+                    
                     } else if (msg.isRecommended === true || msg.content.includes('고객님의 통신 성향을 바탕으로') || msg.content.includes('고객님께 다음 요금제들을')) {
                         let messageContent = msg.content;
                         if (messageContent.startsWith('[')) {
@@ -512,13 +532,14 @@ async function loadMoreChatContent() {
                             plans
                         } = parseTextPlans(messageContent);
                         renderTextPlanCards(intro, plans, true, false);
-                    } else {
+
+                    }  else {
                         prependMessageToChat('bot', msg.content, msg.timestamp);
                     }
                 } else {
                     prependMessageToChat('user', msg.content, msg.timestamp);
                 }
-            }
+            };
 
             const newScrollHeight = chatContent.scrollHeight;
             chatContent.scrollTop = newScrollHeight - oldScrollHeight;
@@ -1318,13 +1339,24 @@ function renderTextPlanCards(intro, plans, prepend = false, showFeedback = false
     let cardsHTML = `<div class="message-bubble">`;
     cardsHTML += introHTML; // 생성된 intro HTML 삽입
 
+
     cardsHTML += `<div class="plan-cards-container">`;
     plans.forEach(plan => {
+
+        let dataDisplay; 
+
+        if (plan['제공량'] === '99999 GB') {
+            dataDisplay = '무제한';
+        } else {
+        
+            dataDisplay = plan['제공량'] || '정보 없음';
+        }
+
         cardsHTML += `
             <div class="plan-card">
                 <h3>${plan['요금제']}</h3>
                 <p><strong>월정액:</strong> ${plan['월정액'] || '정보 없음'}</p>
-                <p><strong>데이터:</strong> ${plan['제공량'] || '정보 없음'}</p>
+                <p><strong>데이터:</strong> ${dataDisplay}</p>
                 <p><strong>테더링:</strong> ${plan['테더링 데이터'] || '정보 없음'}</p>
                 <p><strong>음성통화:</strong> ${plan['추가 통화 허용량'] || '정보 없음'}</p>
                 <p><strong>가족결합:</strong> ${plan['가족 결합 가능'] || '정보 없음'}</p>
@@ -1536,7 +1568,7 @@ function parseUserProfileDto(dto_string) {
  * @param {object} profileData - 사용자 정보 객체
  * @param {string} followUpText - 카드 뒤에 이어질 일반 텍스트 메시지
  */
-function renderUserProfileCard(profileData, followUpText) {
+function renderUserProfileCard(profileData, followUpText, isPrepending = false) {
     const chatContent = document.getElementById('chatContent');
 
     // 전화번호 포맷팅 (01012345678 -> 010-1234-5678)
@@ -1590,12 +1622,18 @@ function renderUserProfileCard(profileData, followUpText) {
         chatContent.innerHTML = '';
     }
 
-    chatContent.insertAdjacentHTML('beforeend', cardHTML);
+    if (isPrepending) {
+        chatContent.insertAdjacentHTML('afterbegin', cardHTML); // 맨 위에 추가
+    } else {
+        chatContent.insertAdjacentHTML('beforeend', cardHTML); // 맨 아래에 추가
+    }
     
     // 후속 질문이 있다면 일반 메시지로 추가
-    if (followUpText) {
+    if (followUpText && !isPrepending) {
         addMessageToChat('bot', followUpText);
     }
     
-    smoothScrollToBottom();
+    if (!isPrepending) {
+        smoothScrollToBottom();
+    }
 }

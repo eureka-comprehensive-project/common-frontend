@@ -13,11 +13,8 @@ let isLoadingMoreChatRooms = false;
 let allChatRoomsLoaded = false;
 const CHAT_LIST_PAGE_SIZE = 20;
 
-// 음성 인식 관련 변수
 let recognition = null;
 let isRecognizing = false;
-let finalTranscript = "";
-let interimMessageDiv = null;
 
 // 부가 혜택 정보를 저장할 Map
 let allBenefitsMap = new Map();
@@ -44,13 +41,13 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // 전역 클릭 이벤트로 드롭다운 닫기
+    // 전역 클릭 이벤트로 프로필 팝업 닫기
     document.addEventListener('click', function (event) {
-        const profileDropdown = document.getElementById('profileDropdown');
-        const userProfile = document.querySelector('.user-profile');
+        const profilePopup = document.getElementById('profilePopup');
+        const profile = document.querySelector('.sidebar-profile');
 
-        if (profileDropdown && !userProfile.contains(event.target)) {
-            profileDropdown.classList.remove('show');
+        if (profilePopup && profile && !profile.contains(event.target) && profilePopup.style.display === 'block') {
+            closeProfilePopup();
         }
     });
 });
@@ -138,12 +135,19 @@ function updateUserProfileDisplay(name) {
     if (userProfileNameElement && name) {
         userProfileNameElement.textContent = name;
     }
+
+    // 아바타에 이메일 첫 글자 표시
+    const userAvatar = document.getElementById('userAvatar');
+    if (userAvatar && name) {
+        const emailInitial = name.charAt(0).toUpperCase();
+        userAvatar.textContent = emailInitial;
+    }
 }
 
 function updateChatHeader(title) {
-    const chatHeader = document.querySelector('.chat-main .chat-header');
-    if (chatHeader) {
-        chatHeader.textContent = title;
+    const chatTitle = document.getElementById('chatTitle');
+    if (chatTitle) {
+        chatTitle.textContent = title;
     }
 }
 
@@ -288,14 +292,14 @@ function renderChatList(chatList, append = false) {
         const month = String(creationDate.getMonth() + 1).padStart(2, '0');
         const day = String(creationDate.getDate()).padStart(2, '0');
         const formattedDate = `${year}/${month}/${day}`;
-        
+
         chatItem.innerHTML = `
             <div class="chat-item-content">
                 <span class="chat-item-title">${title}</span>
                 <span class="chat-item-date">${formattedDate}</span>
             </div>
         `;
-        
+
         chatListContainer.appendChild(chatItem);
     });
 };
@@ -310,7 +314,7 @@ function selectChat(chatId) {
     if (currentChatId === chatId) {
         return;
     }
-    
+
     currentChatId = chatId;
     console.log(`채팅방 선택: ${chatId}`);
 
@@ -327,11 +331,11 @@ function selectChat(chatId) {
     });
 
     const selectedChatItem = document.querySelector(`.chat-item[data-chat-id='${chatId}']`);
-    if(selectedChatItem) {
+    if (selectedChatItem) {
         selectedChatItem.classList.add('active');
         const titleElement = selectedChatItem.querySelector('.chat-item-title');
         if (titleElement) {
-             updateChatHeader(titleElement.textContent.trim());
+            updateChatHeader(titleElement.textContent.trim());
         }
     }
 
@@ -342,7 +346,7 @@ function selectChat(chatId) {
 async function loadChatContent(chatId) {
     const chatContent = document.getElementById('chatContent');
     document.getElementById('suggestionContainer').classList.remove('show');
-    
+
     chatContent.innerHTML = '';
     addMessageToChat('system', '대화 내용을 불러오는 중입니다...');
 
@@ -385,28 +389,39 @@ async function loadChatContent(chatId) {
                         if (messageContent.startsWith('[')) {
                             messageContent = messageContent.substring(1);
                         }
-                        const { intro, plans } = parseDtoPlans(messageContent);
+                        const {
+                            intro,
+                            plans
+                        } = parseDtoPlans(messageContent);
                         renderDtoPlanCards(intro, plans, false);
-                    } 
-                    else if (msg.isRecommended === true || msg.content.includes('고객님의 통신 성향을 바탕으로') || msg.content.includes('고객님께 다음 요금제들을')) {
+                    } else if (msg.isRecommended === true || msg.content.includes('고객님의 통신 성향을 바탕으로') || msg.content.includes('고객님께 다음 요금제들을')) {
                         let messageContent = msg.content;
                         if (messageContent.startsWith('[')) {
                             messageContent = messageContent.substring(1);
                         }
-                        const { intro, plans } = parseTextPlans(messageContent);
+                        const {
+                            intro,
+                            plans
+                        } = parseTextPlans(messageContent);
                         renderTextPlanCards(intro, plans, false, false);
                     } else {
-                        addMessageToChat('bot', msg.content, msg.timestamp);
+                        addMessageToChat('bot', msg.content, msg.timestamp, true); // 애니메이션 없음
                     }
                 } else {
-                    addMessageToChat('user', msg.content, msg.timestamp);
+                    addMessageToChat('user', msg.content, msg.timestamp, true); // 애니메이션 없음
                 }
             });
 
-            chatContent.scrollTop = chatContent.scrollHeight;
+            // 히스토리 로드 후 맨 아래로 스크롤 (부드럽게)
+            setTimeout(() => {
+                chatContent.scrollTo({
+                    top: chatContent.scrollHeight,
+                    behavior: 'smooth'
+                });
+            }, 100);
         } else {
             addMessageToChat('system', '이전 대화 내용이 없습니다.');
-            if(chatRoomStates[currentChatId]) chatRoomStates[currentChatId].allHistoryLoaded = true;
+            if (chatRoomStates[currentChatId]) chatRoomStates[currentChatId].allHistoryLoaded = true;
         }
 
     } catch (error) {
@@ -482,15 +497,20 @@ async function loadMoreChatContent() {
                         if (messageContent.startsWith('[')) {
                             messageContent = messageContent.substring(1);
                         }
-                        const { intro, plans } = parseDtoPlans(messageContent);
+                        const {
+                            intro,
+                            plans
+                        } = parseDtoPlans(messageContent);
                         renderDtoPlanCards(intro, plans, true);
-                    }
-                    else if (msg.isRecommended === true || msg.content.includes('고객님의 통신 성향을 바탕으로') || msg.content.includes('고객님께 다음 요금제들을')) {
+                    } else if (msg.isRecommended === true || msg.content.includes('고객님의 통신 성향을 바탕으로') || msg.content.includes('고객님께 다음 요금제들을')) {
                         let messageContent = msg.content;
                         if (messageContent.startsWith('[')) {
                             messageContent = messageContent.substring(1);
                         }
-                        const { intro, plans } = parseTextPlans(messageContent);
+                        const {
+                            intro,
+                            plans
+                        } = parseTextPlans(messageContent);
                         renderTextPlanCards(intro, plans, true, false);
                     } else {
                         prependMessageToChat('bot', msg.content, msg.timestamp);
@@ -509,13 +529,12 @@ async function loadMoreChatContent() {
 
     } catch (error) {
         console.error('이전 대화 내용 로드 중 오류 발생:', error);
-        if(loadingIndicator) loadingIndicator.remove();
+        if (loadingIndicator) loadingIndicator.remove();
         if (chatRoomStates[currentChatId]) chatRoomStates[currentChatId].allHistoryLoaded = true;
     } finally {
         if (chatRoomStates[currentChatId]) chatRoomStates[currentChatId].isLoadingMoreMessages = false;
     }
 }
-
 
 // 새 채팅 생성
 function createNewChat() {
@@ -570,12 +589,12 @@ function displayWelcomeMessage() {
         const button = document.createElement('div');
         button.className = 'suggestion-item';
         button.textContent = text;
-        
+
         button.onclick = () => {
             messageInput.value = text;
-            messageInput.focus();
+            sendMessage();
         };
-        
+
         suggestionContainer.appendChild(button);
     });
 
@@ -583,132 +602,95 @@ function displayWelcomeMessage() {
     updateChatHeader('새로운 대화');
 }
 
-// [MODIFIED] 메시지 전송 함수
+
 async function sendMessage() {
     const messageInput = document.getElementById('messageInput');
     const message = messageInput.value.trim();
-
     if (!message) return;
-
+    disableChatInput();
     addMessageToChat('user', message);
     messageInput.value = '';
-
     const loadingMessageId = addMessageToChat('bot', '응답을 처리중입니다...');
     let isNewChat = false;
-
     try {
         if (!currentChatId) {
             isNewChat = true;
-            console.log("새 채팅방 생성을 요청합니다.");
             const createRoomResponse = await fetch('https://www.visiblego.com/gateway/chatbot/create-chat-room', {
                 method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${accessToken}`,
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json', },
                 body: JSON.stringify({ userId: userId })
             });
-
-            if (!createRoomResponse.ok) {
-                throw new Error(`채팅방 생성 실패: ${createRoomResponse.status}`);
-            }
-
+            if (!createRoomResponse.ok) throw new Error(`채팅방 생성 실패: ${createRoomResponse.status}`);
             const createRoomResult = await createRoomResponse.json();
             if (createRoomResult && createRoomResult.data && createRoomResult.data.chatRoomId) {
                 currentChatId = createRoomResult.data.chatRoomId;
-
                 if (!chatRoomStates[currentChatId]) {
-                    chatRoomStates[currentChatId] = {
-                        oldestMessageId: null,
-                        allHistoryLoaded: false,
-                        isLoadingMoreMessages: false
-                    };
+                    chatRoomStates[currentChatId] = { oldestMessageId: null, allHistoryLoaded: false, isLoadingMoreMessages: false };
                 }
-                console.log(`새 채팅방 생성 완료: ID = ${currentChatId}`);
             } else {
                 throw new Error('채팅방 ID를 받아오지 못했습니다.');
             }
         }
-
         const response = await fetch('https://www.visiblego.com/gateway/chatbot/api/chat', {
             method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${accessToken}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                userId: userId,
-                chatRoomId: currentChatId,
-                message: message
-            })
+            headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json', },
+            body: JSON.stringify({ userId: userId, chatRoomId: currentChatId, message: message })
         });
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const result = await response.json();
         removeMessage(loadingMessageId);
 
         if (result && result.data) {
             const botResponse = result.data;
 
-            if (botResponse.isPlanShow === true) {
+            // --- [수정된 부분 시작] ---
+            if (botResponse.message && botResponse.message.startsWith('GetUserProfileDetailResponseDto(')) {
+                const dtoEndIndex = botResponse.message.lastIndexOf(')');
+                const dto_string = botResponse.message.substring(0, dtoEndIndex + 1);
+                const followUpText = botResponse.message.substring(dtoEndIndex + 1).trim();
+                
+                const profileData = parseUserProfileDto(dto_string);
+                renderUserProfileCard(profileData, followUpText);
+
+            } else if (botResponse.isPlanShow === true) {
                 let messageContent = botResponse.message;
-                if (messageContent.startsWith('[')) {
-                    messageContent = messageContent.substring(1);
-                }
+                if (messageContent.startsWith('[')) messageContent = messageContent.substring(1);
                 const { intro, plans } = parseDtoPlans(messageContent);
                 renderDtoPlanCards(intro, plans, false);
-            }
-            else if (botResponse.isRecommended === true) {
+
+            } else if (botResponse.isRecommended === true) {
                 let messageContent = botResponse.message;
-                if (messageContent.startsWith('[')) {
-                    messageContent = messageContent.substring(1);
-                }
+                if (messageContent.startsWith('[')) messageContent = messageContent.substring(1);
                 const { intro, plans } = parseTextPlans(messageContent);
                 renderTextPlanCards(intro, plans, false, true);
+
             } else {
                 addMessageToChat('bot', botResponse.message);
             }
+
         } else {
-             addMessageToChat('bot', '응답을 받을 수 없습니다.');
+            addMessageToChat('bot', '응답을 받을 수 없습니다.');
         }
 
         if (isNewChat) {
             const chatListContainer = document.getElementById('chatList');
             const noChatsMessage = chatListContainer.querySelector('.no-chats');
-            if (noChatsMessage) {
-                noChatsMessage.remove();
-            }
-            
+            if (noChatsMessage) noChatsMessage.remove();
             document.querySelectorAll('.chat-item.active').forEach(item => item.classList.remove('active'));
-
-            // [FIX] 클로저(closure) 문제 해결을 위해 새로운 채팅방 ID를 지역 상수에 할당
             const newChatRoomId = currentChatId;
-
             const chatItem = document.createElement('div');
             chatItem.className = 'chat-item active';
-            chatItem.dataset.chatId = newChatRoomId; // 지역 상수 사용
-            chatItem.onclick = () => selectChat(newChatRoomId); // 지역 상수 사용
-
+            chatItem.dataset.chatId = newChatRoomId;
+            chatItem.onclick = () => selectChat(newChatRoomId);
             const creationDate = new Date();
             const year = creationDate.getFullYear();
             const month = String(creationDate.getMonth() + 1).padStart(2, '0');
             const day = String(creationDate.getDate()).padStart(2, '0');
             const formattedDate = `${year}/${month}/${day}`;
-            
-            chatItem.innerHTML = `
-                <div class="chat-item-content">
-                    <span class="chat-item-title">${message}</span>
-                    <span class="chat-item-date">${formattedDate}</span>
-                </div>
-            `;
-            
+            chatItem.innerHTML = `<div class="chat-item-content"><span class="chat-item-title">${message}</span><span class="chat-item-date">${formattedDate}</span></div>`;
             chatListContainer.prepend(chatItem);
             updateChatHeader(message);
         }
-
     } catch (error) {
         console.error('메시지 전송 실패:', error);
         removeMessage(loadingMessageId);
@@ -717,20 +699,13 @@ async function sendMessage() {
             currentChatId = null;
             updateChatHeader('새로운 대화');
         }
+    } finally {
+        enableChatInput();
     }
 }
 
-// STT로부터 메시지 입력
-function setMessageFromSTT(message) {
-    if (!message) return;
-
-    const messageInput = document.getElementById('messageInput');
-    messageInput.value = message;
-    messageInput.focus();
-}
-
 // 채팅에 메시지 추가
-function addMessageToChat(sender, message, timestamp) {
+function addMessageToChat(sender, message, timestamp, noAnimation = false) {
     const chatContent = document.getElementById('chatContent');
 
     if (sender === 'system') {
@@ -749,6 +724,10 @@ function addMessageToChat(sender, message, timestamp) {
     const messageElement = document.createElement('div');
     messageElement.className = `message ${sender}`;
 
+    if (noAnimation) {
+        messageElement.classList.add('no-animation');
+    }
+
     const messageId = 'msg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
     messageElement.id = messageId;
 
@@ -762,14 +741,31 @@ function addMessageToChat(sender, message, timestamp) {
         const messageTime = document.createElement('div');
         messageTime.className = 'message-time';
         const date = timestamp ? new Date(timestamp) : new Date();
-        messageTime.textContent = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        messageTime.textContent = date.toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit'
+        });
         messageElement.appendChild(messageTime);
     }
 
     chatContent.appendChild(messageElement);
-    chatContent.scrollTop = chatContent.scrollHeight;
+
+    if (!noAnimation) {
+        smoothScrollToBottom();
+    }
 
     return messageId;
+}
+
+// 부드러운 스크롤 함수
+function smoothScrollToBottom() {
+    const chatContent = document.getElementById('chatContent');
+    setTimeout(() => {
+        chatContent.scrollTo({
+            top: chatContent.scrollHeight,
+            behavior: 'smooth'
+        });
+    }, 100);
 }
 
 // 채팅에 메시지 앞에 추가 (이전 대화 로드용)
@@ -777,7 +773,7 @@ function prependMessageToChat(sender, message, timestamp) {
     const chatContent = document.getElementById('chatContent');
 
     const messageElement = document.createElement('div');
-    messageElement.className = `message ${sender}`;
+    messageElement.className = `message ${sender} no-animation`;
 
     const messageBubble = document.createElement('div');
     messageBubble.className = 'message-bubble';
@@ -789,54 +785,18 @@ function prependMessageToChat(sender, message, timestamp) {
         const messageTime = document.createElement('div');
         messageTime.className = 'message-time';
         const date = new Date(timestamp);
-        messageTime.textContent = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        messageTime.textContent = date.toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit'
+        });
         messageElement.appendChild(messageTime);
     }
 
     const loadingIndicator = chatContent.querySelector('.loading-indicator');
-    if(loadingIndicator) {
-         loadingIndicator.insertAdjacentElement('afterend', messageElement);
+    if (loadingIndicator) {
+        loadingIndicator.insertAdjacentElement('afterend', messageElement);
     } else {
         chatContent.prepend(messageElement);
-    }
-}
-
-// 임시 메시지 표시 (음성 인식 중)
-function displayMessage(sender, message) {
-    const chatContent = document.getElementById('chatContent');
-    const welcomeMessage = chatContent.querySelector('.welcome-message');
-    if (welcomeMessage) {
-        chatContent.innerHTML = '';
-    }
-
-    const messageElement = document.createElement('div');
-    messageElement.className = `message ${sender} interim`;
-
-    const messageId = 'interim_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-    messageElement.id = messageId;
-
-    const messageBubble = document.createElement('div');
-    messageBubble.className = 'message-bubble';
-    messageBubble.textContent = message;
-
-    const messageTime = document.createElement('div');
-    messageTime.className = 'message-time';
-    messageTime.textContent = new Date().toLocaleTimeString();
-
-    messageElement.appendChild(messageBubble);
-    messageElement.appendChild(messageTime);
-    chatContent.appendChild(messageElement);
-
-    chatContent.scrollTop = chatContent.scrollHeight;
-
-    return messageElement;
-}
-
-// 임시 메시지 제거
-function removeInterimMessage() {
-    if (interimMessageDiv) {
-        interimMessageDiv.remove();
-        interimMessageDiv = null;
     }
 }
 
@@ -848,89 +808,214 @@ function removeMessage(messageId) {
     }
 }
 
-// 음성 인식 토글
-function toggleSTT() {
+
+// 음성 녹음 시작 (마이크 버튼 클릭시 호출)
+function startRecording() {
+    if (isRecognizing) {
+        stopRecognition();
+        return;
+    }
+    showSttModal();
+}
+
+function showSttModal() {
+    const modalHTML = `
+        <div class="stt-modal-overlay" id="sttModalOverlay">
+            <div class="stt-modal">
+                <div class="stt-modal-header">
+                    <h3>🎙️ 음성으로 입력하기</h3>
+                    <div class="stt-header-controls" id="sttHeaderControls"></div>
+                </div>
+                <div class="stt-modal-body">
+                    <p id="sttModalText" class="placeholder">마이크에 대고 말씀해주세요...</p>
+                </div>
+                <div class="stt-modal-footer">
+                    <button class="stt-modal-btn stt-cancel-btn" id="sttCancelBtn">취소</button>
+                    <button class="stt-modal-btn stt-send-btn" id="sttSendBtn">전송</button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    const overlay = document.getElementById('sttModalOverlay');
+    
+    setTimeout(() => overlay.classList.add('show'), 10);
+
+    document.getElementById('sttCancelBtn').onclick = closeSttModal;
+    document.getElementById('sttSendBtn').onclick = sendSttMessage;
+
+    startRecognition();
+}
+
+
+// 음성 인식 모달 닫기
+function closeSttModal() {
+    stopRecognition(); // 진행중인 음성 인식 중지
+    const modalOverlay = document.getElementById('sttModalOverlay');
+    if (modalOverlay) {
+        modalOverlay.classList.remove('show');
+        // 트랜지션이 끝난 후 DOM에서 제거
+        modalOverlay.addEventListener('transitionend', () => modalOverlay.remove(), { once: true });
+    }
+}
+
+
+function retryStt() {
+    closeSttModal();
+    // 이전 모달이 사라지는 애니메이션 시간을 고려하여 잠시 후 새 모달을 엽니다.
+    setTimeout(showSttModal, 200);
+}
+
+
+// 모달에서 인식된 텍스트를 메시지로 전송
+
+function sendSttMessage() {
+    const modalTextElement = document.getElementById('sttModalText');
+    if (!modalTextElement || modalTextElement.classList.contains('placeholder') || modalTextElement.classList.contains('error')) {
+        console.log('안내 또는 에러 메시지는 전송할 수 없습니다.');
+        const modal = document.querySelector('.stt-modal');
+        if (modal) {
+            modal.style.transition = 'transform 0.1s ease';
+            modal.style.transform = 'scale(1.02)';
+            setTimeout(() => {
+                modal.style.transform = 'scale(1)';
+            }, 100);
+        }
+        return;
+    }
+    const messageText = modalTextElement.textContent.trim();
+    if (messageText) {
+        const messageInput = document.getElementById('messageInput');
+        messageInput.value = messageText;
+        sendMessage();
+    }
+    closeSttModal();
+}
+
+function startRecognition() {
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-        alert("이 브라우저는 음성 인식을 지원하지 않습니다 (크롬에서만 작동).");
+        const modalText = document.getElementById('sttModalText');
+        if (modalText) {
+            modalText.textContent = '이 브라우저는 음성 인식을 지원하지 않습니다. (Chrome 브라우저 권장)';
+            modalText.className = 'error';
+        }
         return;
     }
 
-    const button = document.querySelector('.mic-button');
+    let silenceTimeout;
+    const THINKING_TIME = 2000;
 
-    if (!recognition) {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        recognition = new SpeechRecognition();
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    recognition = new SpeechRecognition();
+    recognition.lang = "ko-KR";
+    recognition.interimResults = true;
+    recognition.continuous = true;
+    recognition.maxAlternatives = 1;
 
-        recognition.lang = "ko-KR";
-        recognition.interimResults = false;
-        recognition.maxAlternatives = 1;
-        recognition.continuous = false;
+    let finalTranscript = '';
 
-        recognition.onstart = () => {
-            console.log('음성 인식 시작됨');
-            isRecognizing = true;
-            button.innerHTML = "🛑";
-            interimMessageDiv = displayMessage("user", "🎤 음성 인식 중...");
-        };
-
-        recognition.onresult = (event) => {
-            if (event.results.length > 0) {
-                finalTranscript = event.results[0][0].transcript.trim();
-            }
-        };
-
-        recognition.onerror = (event) => {
-            console.error('음성 인식 오류:', event.error);
-            removeInterimMessage();
-            stopRecognition();
-
-            let errorMessage = "음성 인식 오류가 발생했습니다.";
-            switch (event.error) {
-                case 'no-speech':
-                    errorMessage = "음성이 감지되지 않았습니다.";
-                    break;
-                case 'audio-capture':
-                    errorMessage = "마이크에 접근할 수 없습니다.";
-                    break;
-                case 'not-allowed':
-                    errorMessage = "마이크 권한이 거부되었습니다.";
-                    break;
-            }
-            alert(errorMessage);
-        };
-
-        recognition.onend = () => {
-            console.log('음성 인식 종료');
-            removeInterimMessage();
-
-            if (finalTranscript !== "") {
-                setMessageFromSTT(finalTranscript);
-                sendMessage();
-                finalTranscript = "";
-            }
-            stopRecognition();
-        };
-    }
-
-    if (!isRecognizing) {
-        finalTranscript = "";
-        try {
-            recognition.start();
-        } catch (error) {
-            console.error('음성 인식 시작 실패:', error);
-            alert('음성 인식을 시작할 수 없습니다.');
+    recognition.onstart = () => {
+        isRecognizing = true;
+        document.querySelector('.mic-button').innerHTML = "🛑";
+        
+        const headerControls = document.getElementById('sttHeaderControls');
+        if (headerControls) {
+            headerControls.innerHTML = '<div class="recording-indicator"></div>';
         }
-    } else {
-        recognition.stop();
+
+        const modalText = document.getElementById('sttModalText');
+        if (modalText) {
+            modalText.textContent = '듣고 있어요...';
+            modalText.className = 'placeholder';
+        }
+
+        // 재시도 시, 전송 버튼을 원래대로 복구
+        const sendBtn = document.getElementById('sttSendBtn');
+        if(sendBtn) {
+            sendBtn.textContent = '전송';
+            sendBtn.onclick = sendSttMessage;
+        }
+    };
+
+    recognition.onresult = (event) => {
+        clearTimeout(silenceTimeout);
+        let interimTranscript = '';
+        finalTranscript = '';
+        for (let i = 0; i < event.results.length; ++i) {
+            if (event.results[i].isFinal) {
+                finalTranscript += event.results[i][0].transcript;
+            } else {
+                interimTranscript += event.results[i][0].transcript;
+            }
+        }
+        const modalText = document.getElementById('sttModalText');
+        const displayText = (finalTranscript + interimTranscript).trim();
+        if (modalText && displayText) {
+            modalText.textContent = displayText;
+            modalText.className = '';
+        }
+        silenceTimeout = setTimeout(() => {
+            if (recognition) {
+                recognition.stop();
+            }
+        }, THINKING_TIME);
+    };
+
+    recognition.onerror = (event) => {
+        console.error('음성 인식 오류:', event.error);
+        clearTimeout(silenceTimeout);
+        const modalText = document.getElementById('sttModalText');
+        if (modalText) {
+            let errorMessage = "음성 인식 중 오류가 발생했습니다.";
+            if (event.error === 'no-speech') {
+                errorMessage = "음성이 감지되지 않았습니다. 다시 시도해주세요.";
+                // '전송' 버튼을 '재시도' 버튼으로 변경
+                const sendBtn = document.getElementById('sttSendBtn');
+                if (sendBtn) {
+                    sendBtn.textContent = '재시도';
+                    sendBtn.onclick = retryStt;
+                }
+            } else if (event.error === 'audio-capture') {
+                errorMessage = "마이크에 접근할 수 없습니다. 권한을 확인해주세요.";
+            } else if (event.error === 'not-allowed') {
+                errorMessage = "마이크 사용 권한이 거부되었습니다.";
+            }
+            modalText.textContent = errorMessage;
+            modalText.className = 'error';
+        }
+        stopRecognition();
+    };
+
+    recognition.onend = () => {
+        console.log('음성 인식 세션 종료');
+        clearTimeout(silenceTimeout);
+
+        const headerControls = document.getElementById('sttHeaderControls');
+        if (headerControls) {
+            headerControls.innerHTML = '<button class="stt-retry-btn-corner" onclick="retryStt()">⟳</button>';
+        }
+
+        stopRecognition();
+    };
+
+    try {
+        recognition.start();
+    } catch (e) {
+        console.error("음성 인식 시작 실패:", e);
+        stopRecognition();
     }
 }
-
 // 음성 인식 중지
 function stopRecognition() {
+    if (recognition) {
+        recognition.stop();
+        recognition = null;
+    }
     isRecognizing = false;
-    const button = document.querySelector('.mic-button');
-    button.innerHTML = "🎤";
+    document.querySelector('.mic-button').innerHTML = "🎙️";
 }
+
 
 // 키보드 이벤트 처리
 function handleKeyPress(event) {
@@ -939,22 +1024,22 @@ function handleKeyPress(event) {
     }
 }
 
-// 음성 녹음 시작
-function startRecording() {
-    toggleSTT();
+// 프로필 메뉴 토글 (plan과 동일)
+function toggleProfileMenu() {
+    const popup = document.getElementById('profilePopup');
+    popup.style.display = popup.style.display === 'block' ? 'none' : 'block';
 }
 
-// 프로필 메뉴 토글
-function toggleProfileMenu() {
-    const dropdown = document.getElementById('profileDropdown');
-    dropdown.classList.toggle('show');
+// 프로필 팝업 닫기
+function closeProfilePopup() {
+    const popup = document.getElementById('profilePopup');
+    popup.style.display = 'none';
 }
 
 // 마이페이지로 이동
 function goToMyPage(event) {
     event.stopPropagation();
-    const dropdown = document.getElementById('profileDropdown');
-    dropdown.classList.remove('show');
+    closeProfilePopup();
 
     window.location.href = '/page/mypage';
 }
@@ -962,10 +1047,7 @@ function goToMyPage(event) {
 // 로그아웃
 function logout(event) {
     event.stopPropagation();
-    const dropdown = document.getElementById('profileDropdown');
-    if (dropdown) {
-        dropdown.classList.remove('show');
-    }
+    closeProfilePopup();
 
     showLogoutModal();
 }
@@ -1038,7 +1120,11 @@ function parseTextPlans(text) {
     const parts = text.split("요금제:").filter(p => p.trim() !== '');
 
     if (parts.length === 0) {
-        return { intro: text, plans: [], outro: '' };
+        return {
+            intro: text,
+            plans: [],
+            outro: ''
+        };
     }
 
     const intro = parts.shift().trim();
@@ -1061,7 +1147,9 @@ function parseTextPlans(text) {
         const lines = part.trim().split('\n').filter(line => line.trim() !== '');
         if (lines.length < 1) return;
 
-        const plan = { '요금제': lines.shift().replace(/-|'/g, '').trim() };
+        const plan = {
+            '요금제': lines.shift().replace(/-|'/g, '').trim()
+        };
 
         lines.forEach(line => {
             const detail = line.split(':');
@@ -1077,7 +1165,11 @@ function parseTextPlans(text) {
         }
     });
 
-    return { intro, plans, outro };
+    return {
+        intro,
+        plans,
+        outro
+    };
 }
 
 function parseDtoPlans(messageContent) {
@@ -1088,7 +1180,10 @@ function parseDtoPlans(messageContent) {
     const planStrings = messageContent.match(planRegex);
 
     if (!planStrings) {
-        return { intro: messageContent, plans: [] };
+        return {
+            intro: messageContent,
+            plans: []
+        };
     }
 
     const firstMatchIndex = messageContent.indexOf(planStrings[0]);
@@ -1096,8 +1191,8 @@ function parseDtoPlans(messageContent) {
 
     planStrings.forEach(planString => {
         const plan = {};
-        const fieldsString = planString.substring(22, planString.length - 1); 
-        
+        const fieldsString = planString.substring(22, planString.length - 1);
+
         const pairs = fieldsString.split(/, (?=\w+=)/);
 
         pairs.forEach(pair => {
@@ -1110,19 +1205,21 @@ function parseDtoPlans(messageContent) {
                 value = (value === 'true');
             } else if (value.startsWith('[')) {
                 // Keep as string
-            }
-            else if (!isNaN(value) && value.trim() !== '' && !value.includes('-')) {
+            } else if (!isNaN(value) && value.trim() !== '' && !value.includes('-')) {
                 if (!/\D/.test(value)) {
                     value = Number(value);
                 }
             }
-            
+
             plan[key.trim()] = value;
         });
         plans.push(plan);
     });
 
-    return { intro, plans };
+    return {
+        intro,
+        plans
+    };
 }
 
 function handleFeedbackClick(buttonElement, feedbackText, displayText) {
@@ -1140,60 +1237,54 @@ function handleFeedbackClick(buttonElement, feedbackText, displayText) {
 
 async function sendFeedbackToServer(feedbackMessage) {
     if (!feedbackMessage || !currentChatId) return;
-
+    disableChatInput();
     const loadingMessageId = addMessageToChat('bot', '응답을 처리중입니다...');
-
     try {
         const response = await fetch('https://www.visiblego.com/gateway/chatbot/api/chat', {
             method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${accessToken}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                userId: userId,
-                chatRoomId: currentChatId,
-                message: feedbackMessage
-            })
+            headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json', },
+            body: JSON.stringify({ userId: userId, chatRoomId: currentChatId, message: feedbackMessage })
         });
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const result = await response.json();
         removeMessage(loadingMessageId);
-
         if (result && result.data && result.data.message) {
             const botResponse = result.data;
             
-            if (botResponse.isPlanShow === true) {
+            if (botResponse.message && botResponse.message.startsWith('GetUserProfileDetailResponseDto(')) {
+                const dtoEndIndex = botResponse.message.lastIndexOf(')');
+                const dto_string = botResponse.message.substring(0, dtoEndIndex + 1);
+                const followUpText = botResponse.message.substring(dtoEndIndex + 1).trim();
+
+                const profileData = parseUserProfileDto(dto_string);
+                renderUserProfileCard(profileData, followUpText);
+
+            } else if (botResponse.isPlanShow === true) {
                 let messageContent = botResponse.message;
-                if (messageContent.startsWith('[')) {
-                    messageContent = messageContent.substring(1);
-                }
+                if (messageContent.startsWith('[')) messageContent = messageContent.substring(1);
                 const { intro, plans } = parseDtoPlans(messageContent);
                 renderDtoPlanCards(intro, plans, false);
-            }
-            else if (botResponse.isRecommended === true) {
+
+            } else if (botResponse.isRecommended === true) {
                 let messageContent = botResponse.message;
-                if (messageContent.startsWith('[')) {
-                    messageContent = messageContent.substring(1);
-                }
+                if (messageContent.startsWith('[')) messageContent = messageContent.substring(1);
                 const { intro, plans } = parseTextPlans(messageContent);
                 renderTextPlanCards(intro, plans, false, true);
-            }
-            else {
+                
+            } else {
                 addMessageToChat('bot', botResponse.message);
             }
+            // --- [수정된 부분 끝] ---
+
         } else {
             addMessageToChat('bot', '피드백에 대한 응답을 받지 못했습니다.');
         }
-
     } catch (error) {
         console.error('피드백 전송 실패:', error);
         removeMessage(loadingMessageId);
         addMessageToChat('bot', '죄송합니다. 피드백 처리 중 오류가 발생했습니다.');
+    } finally {
+        enableChatInput();
     }
 }
 
@@ -1201,11 +1292,32 @@ function renderTextPlanCards(intro, plans, prepend = false, showFeedback = false
     const chatContent = document.getElementById('chatContent');
     const cardsContainer = document.createElement('div');
     cardsContainer.className = 'message bot';
-    let cardsHTML = `<div class="message-bubble">`;
-
-    if (intro) {
-        cardsHTML += `<p class="plan-intro-text">${intro}</p>`;
+    
+    if (prepend) {
+        cardsContainer.classList.add('no-animation');
     }
+    
+    let introHTML = '';
+    // intro 텍스트에 대괄호가 있는지 확인하고 파싱
+    if (intro && intro.includes('[') && intro.includes(']')) {
+        const mainText = intro.substring(0, intro.indexOf('[')).trim();
+        const reasonText = intro.substring(intro.indexOf('[') + 1, intro.lastIndexOf(']')).trim();
+
+        introHTML = `
+            <p class="plan-intro-text">${mainText}</p>
+            <div class="recommendation-reason">
+                <span class="reason-icon">💡</span>
+                <p>${reasonText}</p>
+            </div>
+        `;
+    } else if (intro) {
+        // 대괄호가 없는 일반적인 intro 텍스트 처리
+        introHTML = `<p class="plan-intro-text">${intro}</p>`;
+    }
+
+    let cardsHTML = `<div class="message-bubble">`;
+    cardsHTML += introHTML; // 생성된 intro HTML 삽입
+
     cardsHTML += `<div class="plan-cards-container">`;
     plans.forEach(plan => {
         cardsHTML += `
@@ -1244,7 +1356,7 @@ function renderTextPlanCards(intro, plans, prepend = false, showFeedback = false
         if (loadingIndicator) {
             loadingIndicator.insertAdjacentElement('afterend', cardsContainer);
         } else {
-             chatContent.prepend(cardsContainer);
+            chatContent.prepend(cardsContainer);
         }
     } else {
         const welcomeMessage = chatContent.querySelector('.welcome-message');
@@ -1252,7 +1364,7 @@ function renderTextPlanCards(intro, plans, prepend = false, showFeedback = false
             chatContent.innerHTML = '';
         }
         chatContent.appendChild(cardsContainer);
-        chatContent.scrollTop = chatContent.scrollHeight;
+        smoothScrollToBottom();
     }
 };
 
@@ -1260,10 +1372,15 @@ function requestPlanChange(planId, benefitIdListString) {
     try {
         const benefitIds = JSON.parse(benefitIdListString);
         alert(`'요금제 변경하기' 기능은 현재 개발 중입니다.\n\n선택된 요금제 ID: ${planId}\n선택된 혜택 ID 목록: ${benefitIds.join(', ') || '없음'}`);
-        console.log("요금제 변경 요청 (API 미연결):", { planId, benefitIds });
-    } catch(e) {
+        console.log("요금제 변경 요청 (API 미연결):", {
+            planId,
+            benefitIds
+        });
+    } catch (e) {
         alert(`'요금제 변경하기' 기능은 현재 개발 중입니다.\n\n선택된 요금제 ID: ${planId}`);
-        console.log("요금제 변경 요청 (API 미연결):", { planId });
+        console.log("요금제 변경 요청 (API 미연결):", {
+            planId
+        });
     }
 }
 
@@ -1271,8 +1388,13 @@ function renderDtoPlanCards(intro, plans, prepend = false) {
     const chatContent = document.getElementById('chatContent');
     const cardsContainer = document.createElement('div');
     cardsContainer.className = 'message bot';
+
+    if (prepend) {
+        cardsContainer.classList.add('no-animation');
+    }
+
     let cardsHTML = `<div class="message-bubble">`;
-    
+
     if (intro) {
         const introP = document.createElement('p');
         introP.className = 'plan-intro-text';
@@ -1283,25 +1405,24 @@ function renderDtoPlanCards(intro, plans, prepend = false) {
     cardsHTML += `<div class="plan-cards-container">`;
 
     plans.forEach(plan => {
-        const dataDisplay = plan.dataAllowance === 99999 ? '무제한' : 
-                            (plan.dataAllowance != null ? `${plan.dataAllowance}${plan.dataAllowanceUnit || 'GB'}` : '정보 없음');
-        
+        const dataDisplay = plan.dataAllowance === 99999 ? '무제한' :
+            (plan.dataAllowance != null ? `${plan.dataAllowance}${plan.dataAllowanceUnit || 'GB'}` : '정보 없음');
+
         const tetheringDisplay = plan.tetheringDataAmount != null ? `${plan.tetheringDataAmount}${plan.tetheringDataUnit || 'GB'}` : '정보 없음';
         const voiceDisplay = plan.voiceAllowance != null ? (plan.voiceAllowance === 0 ? '기본제공' : `${plan.voiceAllowance}분`) : '기본제공';
         const additionalCallDisplay = plan.additionalCallAllowance != null ? `${plan.additionalCallAllowance}분` : '정보 없음';
         const monthlyFeeDisplay = plan.monthlyFee != null ? `${plan.monthlyFee.toLocaleString()}원` : '정보 없음';
 
-        // [MODIFIED] 부가 혜택 표시 HTML 생성 로직
         let benefitsHTML = '';
         if (allBenefitsMap.size > 0 && plan.benefitIdList && plan.benefitIdList.length > 2) { // length > 2는 '[]' 케이스 방지
             try {
                 const benefitIds = JSON.parse(plan.benefitIdList);
                 if (Array.isArray(benefitIds) && benefitIds.length > 0) {
-                    
+
                     const benefitNames = benefitIds
                         .map(id => allBenefitsMap.get(id)) // ID를 이름으로 변환
                         .filter(name => name); // 이름이 없는 경우(null, undefined) 필터링
-                    
+
                     if (benefitNames.length > 0) {
                         benefitsHTML = `
                             <div class="plan-benefits">
@@ -1317,7 +1438,7 @@ function renderDtoPlanCards(intro, plans, prepend = false) {
                 console.error("benefitIdList 파싱 오류:", plan.benefitIdList, e);
             }
         }
-        
+
         cardsHTML += `
             <div class="plan-card">
                 <div class="plan-card-header">
@@ -1338,16 +1459,16 @@ function renderDtoPlanCards(intro, plans, prepend = false) {
             </div>
         `;
     });
-    
+
     cardsHTML += `</div></div>`;
     cardsContainer.innerHTML = cardsHTML;
-    
+
     if (prepend) {
         const loadingIndicator = chatContent.querySelector('.loading-indicator');
         if (loadingIndicator) {
             loadingIndicator.insertAdjacentElement('afterend', cardsContainer);
         } else {
-             chatContent.prepend(cardsContainer);
+            chatContent.prepend(cardsContainer);
         }
     } else {
         const welcomeMessage = chatContent.querySelector('.welcome-message');
@@ -1355,6 +1476,126 @@ function renderDtoPlanCards(intro, plans, prepend = false) {
             chatContent.innerHTML = '';
         }
         chatContent.appendChild(cardsContainer);
-        chatContent.scrollTop = chatContent.scrollHeight;
+        smoothScrollToBottom();
     }
+}
+/**
+ * 채팅 입력창을 비활성화하는 함수
+ */
+function disableChatInput() {
+    const inputSection = document.querySelector('.chat-input-section');
+    const messageInput = document.getElementById('messageInput');
+    const sendButton = document.querySelector('.send-button');
+    const micButton = document.querySelector('.mic-button');
+
+    inputSection.classList.add('input-disabled');
+    messageInput.disabled = true;
+    sendButton.disabled = true;
+    micButton.disabled = true;
+}
+
+/**
+ * 채팅 입력창을 다시 활성화하는 함수
+ */
+function enableChatInput() {
+    const inputSection = document.querySelector('.chat-input-section');
+    const messageInput = document.getElementById('messageInput');
+    const sendButton = document.querySelector('.send-button');
+    const micButton = document.querySelector('.mic-button');
+
+    inputSection.classList.remove('input-disabled');
+    messageInput.disabled = false;
+    sendButton.disabled = false;
+    micButton.disabled = false;
+}
+
+/**
+ * GetUserProfileDetailResponseDto 문자열을 파싱하여 객체로 변환하는 함수
+ * @param {string} dto_string - DTO 형태의 전체 문자열
+ * @returns {object} - 파싱된 사용자 정보 객체
+ */
+function parseUserProfileDto(dto_string) {
+    const profileData = {};
+    // 괄호 안의 내용만 추출
+    const content = dto_string.substring(dto_string.indexOf('(') + 1, dto_string.lastIndexOf(')'));
+    
+    // 쉼표와 공백을 기준으로 각 필드를 분리
+    const pairs = content.split(', ');
+
+    pairs.forEach(pair => {
+        const [key, value] = pair.split('=');
+        if (key && value) {
+            profileData[key.trim()] = value.trim() === 'null' ? null : value.trim();
+        }
+    });
+    return profileData;
+}
+
+/**
+ * 파싱된 사용자 정보로 프로필 카드를 생성하고 채팅창에 표시하는 함수
+ * @param {object} profileData - 사용자 정보 객체
+ * @param {string} followUpText - 카드 뒤에 이어질 일반 텍스트 메시지
+ */
+function renderUserProfileCard(profileData, followUpText) {
+    const chatContent = document.getElementById('chatContent');
+
+    // 전화번호 포맷팅 (01012345678 -> 010-1234-5678)
+    const formatPhone = (phone) => {
+        if (!phone || phone.length !== 11) return phone;
+        return `${phone.substring(0, 3)}-${phone.substring(3, 7)}-${phone.substring(7)}`;
+    };
+
+    // 날짜 포맷팅 (타임스탬프 -> YYYY년 MM월 DD일)
+    const formatDate = (dateString) => {
+        if (!dateString) return '정보 없음';
+        const date = new Date(dateString);
+        return `${date.getFullYear()}년 ${String(date.getMonth() + 1).padStart(2, '0')}월 ${String(date.getDate()).padStart(2, '0')}일`;
+    };
+
+    const cardHTML = `
+        <div class="message bot no-animation">
+            <div class="profile-card">
+                <div class="profile-card-header">
+                    <h3>👤 내 정보</h3>
+                </div>
+                <div class="profile-card-body">
+                    <div class="profile-info-row">
+                        <span class="profile-info-label">📧 이 름</span>
+                        <span>${profileData.name || '정보 없음'}</span>
+                    </div>
+                    <div class="profile-info-row">
+                        <span class="profile-info-label">👤 이메일</span>
+                        <span>${profileData.email || '정보 없음'}</span>
+                    </div>
+                    <div class="profile-info-row">
+                        <span class="profile-info-label">📞 연락처</span>
+                        <span>${formatPhone(profileData.phone) || '정보 없음'}</span>
+                    </div>
+                    <div class="profile-info-row">
+                        <span class="profile-info-label">🎂 생년월일</span>
+                        <span>${profileData.birthday || '정보 없음'}</span>
+                    </div>
+                    <div class="profile-info-row">
+                        <span class="profile-info-label">🗓️ 가입일</span>
+                        <span>${formatDate(profileData.createdAt)}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // 기존의 환영 메시지 등이 있다면 제거
+    const welcomeMessage = chatContent.querySelector('.welcome-message');
+    if (welcomeMessage) {
+        chatContent.innerHTML = '';
+    }
+
+    chatContent.insertAdjacentHTML('beforeend', cardHTML);
+    
+    // 후속 질문이 있다면 일반 메시지로 추가
+    if (followUpText) {
+        addMessageToChat('bot', followUpText);
+    }
+    
+    smoothScrollToBottom();
 }

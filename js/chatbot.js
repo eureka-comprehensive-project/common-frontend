@@ -1484,21 +1484,9 @@ function renderTextPlanCards(intro, plans, prepend = false, showFeedback = false
     }
 };
 
-function requestPlanChange(planId, benefitIdListString) {
-    try {
-        const benefitIds = JSON.parse(benefitIdListString);
-        alert(`'요금제 변경하기' 기능은 현재 개발 중입니다.\n\n선택된 요금제 ID: ${planId}\n선택된 혜택 ID 목록: ${benefitIds.join(', ') || '없음'}`);
-        console.log("요금제 변경 요청 (API 미연결):", {
-            planId,
-            benefitIds
-        });
-    } catch (e) {
-        alert(`'요금제 변경하기' 기능은 현재 개발 중입니다.\n\n선택된 요금제 ID: ${planId}`);
-        console.log("요금제 변경 요청 (API 미연결):", {
-            planId
-        });
-    }
-}
+
+
+// ===== [수정] 아래 함수 전체를 교체해주세요 =====
 
 function renderDtoPlanCards(intro, plans, prepend = false) {
     const chatContent = document.getElementById('chatContent');
@@ -1509,7 +1497,9 @@ function renderDtoPlanCards(intro, plans, prepend = false) {
         cardsContainer.classList.add('no-animation');
     }
 
-    let cardsHTML = `<div class="message-bubble">`;
+    // --- HTML 구조를 만드는 로직 수정 시작 ---
+
+    let cardsHTML = `<div class="message-bubble">`; // 말풍선 시작
 
     if (intro) {
         const introP = document.createElement('p');
@@ -1518,7 +1508,7 @@ function renderDtoPlanCards(intro, plans, prepend = false) {
         cardsHTML += introP.outerHTML;
     }
 
-    cardsHTML += `<div class="plan-cards-container">`;
+    cardsHTML += `<div class="plan-cards-container">`; // 카드 컨테이너 시작
 
     plans.forEach(plan => {
         const dataDisplay = plan.dataAllowance === 99999 ? '무제한' :
@@ -1530,14 +1520,13 @@ function renderDtoPlanCards(intro, plans, prepend = false) {
         const monthlyFeeDisplay = plan.monthlyFee != null ? `${plan.monthlyFee.toLocaleString()}원` : '정보 없음';
 
         let benefitsHTML = '';
-        if (allBenefitsMap.size > 0 && plan.benefitIdList && plan.benefitIdList.length > 2) { // length > 2는 '[]' 케이스 방지
+        if (allBenefitsMap.size > 0 && plan.benefitIdList && plan.benefitIdList.length > 2) {
             try {
                 const benefitIds = JSON.parse(plan.benefitIdList);
                 if (Array.isArray(benefitIds) && benefitIds.length > 0) {
-
                     const benefitNames = benefitIds
-                        .map(id => allBenefitsMap.get(id)) // ID를 이름으로 변환
-                        .filter(name => name); // 이름이 없는 경우(null, undefined) 필터링
+                        .map(id => allBenefitsMap.get(id))
+                        .filter(name => name);
 
                     if (benefitNames.length > 0) {
                         benefitsHTML = `
@@ -1546,8 +1535,7 @@ function renderDtoPlanCards(intro, plans, prepend = false) {
                                 <div class="benefits-tags">
                                     ${benefitNames.map(name => `<span class="benefit-tag">${name}</span>`).join('')}
                                 </div>
-                            </div>
-                        `;
+                            </div>`;
                     }
                 }
             } catch (e) {
@@ -1569,14 +1557,22 @@ function renderDtoPlanCards(intro, plans, prepend = false) {
                     <p class="plan-additional-calls"><strong>부가통화:</strong> ${additionalCallDisplay}</p>
                 </div>
                 ${benefitsHTML}
-                <div class="plan-card-footer">
-                    <button class="change-plan-btn" onclick="requestPlanChange(${plan.planId}, '${plan.benefitIdList}')">요금제 변경하기</button>
-                </div>
             </div>
         `;
     });
 
-    cardsHTML += `</div></div>`;
+    cardsHTML += `</div>`; // .plan-cards-container 닫기
+    cardsHTML += `</div>`; // .message-bubble 닫기
+
+    // '전체 요금제 보러가기' 버튼을 말풍선(message-bubble) 밖으로 이동
+    cardsHTML += `
+        <div class="overall-action-footer">
+            <button class="change-plan-btn-main" onclick="movePlanPage()">요금제 보러가기</button>
+        </div>
+    `;
+    
+    // --- HTML 구조를 만드는 로직 수정 끝 ---
+
     cardsContainer.innerHTML = cardsHTML;
 
     if (prepend) {

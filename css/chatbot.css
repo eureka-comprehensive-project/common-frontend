@@ -1285,4 +1285,32 @@ body {
     vertical-align: middle;
 }
 
+/* ===== 추가될 CSS 코드 시작 ===== */
+
+/* 전체 요금제 보기 버튼을 감싸는 푸터 영역 */
+.overall-action-footer {
+    margin-top: 16px;
+    padding-top: 0px;
+    /* border-top: 1px solid #f1f3f4; */
+    text-align: center;
+}
+
+/* 메인 요금제 보러가기 버튼 */
+.change-plan-btn-main {
+    padding: 12px 30px;
+    border: none;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #d63384 0%, #ad1457 100%);
+    color: white;
+    font-size: 15px;
+    font-family: 'Pretendard-Bold', sans-serif;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.change-plan-btn-main:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(214, 51, 132, 0.35);
+}
+
 /* ===== 추가될 CSS 코드 끝 ===== */

@@ -62,6 +62,7 @@ window.fetch = async function (url, options = {}) {
             message = "로그인이 필요합니다.";
             break;
           case 10007:
+          case 10008:
             message = "차단된 사용자입니다. 관리자에게 문의해주세요.";
             break;
           default:

@@ -1219,3 +1219,70 @@ body {
   align-items: center;
   gap: 6px;
 }
+
+/* ===== 추가될 CSS 코드 시작 ===== */
+
+/* 추천 질문 카드 컨테이너 */
+.suggestion-card-container {
+    background-color: #ffffff;
+    border: 1px solid #dee2e6;
+    border-radius: 12px;
+    padding: 24px;
+    max-width: 500px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* 추천 질문 카드 제목 */
+.suggestion-card-title {
+    font-size: 16px;
+    font-family: 'Pretendard-Bold', sans-serif;
+    color: #333;
+    margin-bottom: 8px;
+}
+
+/* 추천 질문 카드 부제목 */
+.suggestion-card-subtitle {
+    font-size: 14px;
+    color: #6c757d;
+    margin-bottom: 20px;
+}
+
+/* 추천 질문 버튼 목록 */
+.suggestion-buttons-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* 개별 추천 질문 버튼 */
+.suggestion-action-button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 16px 20px;
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    background-color: #f8f9fa;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 14px;
+    font-family: 'Pretendard-Medium', sans-serif;
+    color: #343a40;
+    position: relative;
+    overflow: hidden;
+}
+
+.suggestion-action-button:hover {
+    background-color: #f1f3f4;
+    border-color: #d63384;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+}
+
+/* 버튼 내 아이콘과 텍스트 정렬 */
+.suggestion-action-button span {
+    display: inline-block;
+    vertical-align: middle;
+}
+
+/* ===== 추가될 CSS 코드 끝 ===== */

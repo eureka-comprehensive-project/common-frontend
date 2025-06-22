@@ -384,7 +384,7 @@ async function loadChatContent(chatId) {
 
             result.data.forEach(msg => {
                 console.log(msg);
-                
+
                 if (msg.bot) {
                     if (msg.planShow === true) {
                         let messageContent = msg.content;
@@ -410,7 +410,7 @@ async function loadChatContent(chatId) {
                         const dtoEndIndex = msg.content.lastIndexOf(')');
                         const dto_string = msg.content.substring(0, dtoEndIndex + 1);
                         const followUpText = msg.content.substring(dtoEndIndex + 1).trim();
-                        
+
                         const profileData = parseUserProfileDto(dto_string);
                         renderUserProfileCard(profileData, followUpText);
 
@@ -513,15 +513,15 @@ async function loadMoreChatContent() {
                             plans
                         } = parseDtoPlans(messageContent);
                         renderDtoPlanCards(intro, plans, true);
-                        
+
                     } else if (msg && msg.content.startsWith('GetUserProfileDetailResponseDto(')) {
                         const dtoEndIndex = msg.content.lastIndexOf(')');
                         const dto_string = msg.content.substring(0, dtoEndIndex + 1);
                         const followUpText = msg.content.substring(dtoEndIndex + 1).trim();
-                        
+
                         const profileData = parseUserProfileDto(dto_string);
                         renderUserProfileCard(profileData, followUpText, true);
-                    
+
                     } else if (msg.isRecommended === true || msg.content.includes('고객님의 통신 성향을 바탕으로') || msg.content.includes('고객님께 다음 요금제들을')) {
                         let messageContent = msg.content;
                         if (messageContent.startsWith('[')) {
@@ -533,7 +533,7 @@ async function loadMoreChatContent() {
                         } = parseTextPlans(messageContent);
                         renderTextPlanCards(intro, plans, true, false);
 
-                    }  else {
+                    } else {
                         prependMessageToChat('bot', msg.content, msg.timestamp);
                     }
                 } else {
@@ -625,39 +625,39 @@ function displayWelcomeMessage() {
 }
 
 /**
- * 추천 질문 버튼 클릭 시 호출되는 함수
- * @param {HTMLElement} buttonElement - 클릭된 버튼 요소
- */
+ * 추천 질문 버튼 클릭 시 호출되는 함수
+ * @param {HTMLElement} buttonElement - 클릭된 버튼 요소
+ */
 function handleSuggestionClick(buttonElement) {
-    const message = buttonElement.innerText.trim();
-    if (!message) return;
-    
-    // [수정] 이 함수에서는 화면에 메시지를 추가하지 않습니다.
-    // addMessageToChat('user', message); // 이 라인을 삭제 또는 주석 처리!
-    
-    // 클릭된 버튼 UI를 화면에서 제거
-    const container = buttonElement.closest('.message.bot');
-    if(container) {
-        container.remove();
-    }
+    const message = buttonElement.innerText.trim();
+    if (!message) return;
 
-    // sendMessage 함수를 호출하여 메시지 전송 및 화면 표시를 위임합니다.
-    sendMessage(message); 
+    // [수정] 이 함수에서는 화면에 메시지를 추가하지 않습니다.
+    // addMessageToChat('user', message); // 이 라인을 삭제 또는 주석 처리!
+
+    // 클릭된 버튼 UI를 화면에서 제거
+    const container = buttonElement.closest('.message.bot');
+    if (container) {
+        container.remove();
+    }
+
+    // sendMessage 함수를 호출하여 메시지 전송 및 화면 표시를 위임합니다.
+    sendMessage(message);
 }
 
 
 async function sendMessage(predefinedMessage = null) {
     const messageInput = document.getElementById('messageInput');
-    
+
     // 버튼으로 메시지가 전달되면 해당 텍스트를, 아니면 입력 필드의 값을 사용
     const message = predefinedMessage || messageInput.value.trim();
-    
+
     // 전송할 메시지가 없으면 함수 종료
     if (!message) return;
 
     // 메시지 소스(버튼, 직접입력)에 관계없이 사용자 메시지를 채팅창에 추가
     addMessageToChat('user', message);
-    
+
     // 입력창 비활성화 및 초기화
     disableChatInput();
     messageInput.value = '';
@@ -677,7 +677,7 @@ async function sendMessage(predefinedMessage = null) {
             });
 
             if (!createRoomResponse.ok) throw new Error(`채팅방 생성 실패: ${createRoomResponse.status}`);
-            
+
             const createRoomResult = await createRoomResponse.json();
             if (createRoomResult && createRoomResult.data && createRoomResult.data.chatRoomId) {
                 currentChatId = createRoomResult.data.chatRoomId;
@@ -697,7 +697,7 @@ async function sendMessage(predefinedMessage = null) {
         });
 
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        
+
         const result = await response.json();
         removeMessage(loadingMessageId); // 로딩 메시지 제거
 
@@ -739,21 +739,21 @@ async function sendMessage(predefinedMessage = null) {
             const chatListContainer = document.getElementById('chatList');
             const noChatsMessage = chatListContainer.querySelector('.no-chats');
             if (noChatsMessage) noChatsMessage.remove();
-            
+
             document.querySelectorAll('.chat-item.active').forEach(item => item.classList.remove('active'));
-            
+
             const newChatRoomId = currentChatId;
             const chatItem = document.createElement('div');
             chatItem.className = 'chat-item active';
             chatItem.dataset.chatId = newChatRoomId;
             chatItem.onclick = () => selectChat(newChatRoomId);
-            
+
             const creationDate = new Date();
             const year = creationDate.getFullYear();
             const month = String(creationDate.getMonth() + 1).padStart(2, '0');
             const day = String(creationDate.getDate()).padStart(2, '0');
             const formattedDate = `${year}/${month}/${day}`;
-            
+
             chatItem.innerHTML = `<div class="chat-item-content"><span class="chat-item-title">${message}</span><span class="chat-item-date">${formattedDate}</span></div>`;
             chatListContainer.prepend(chatItem);
             updateChatHeader(message);
@@ -791,7 +791,7 @@ function addMessageToChat(sender, message, timestamp, noAnimation = false) {
             document.getElementById('suggestionContainer').classList.remove('show');
         }
     }
-    
+
     // ===== 핵심 수정 부분 시작 =====
     // 챗봇의 특정 응답을 감지하고 파싱하여 버튼 UI를 렌더링
     if (sender === 'bot' && message.includes('어떤 도움을 드릴까요?') && message.includes('{') && message.includes('}')) {
@@ -944,7 +944,7 @@ function showSttModal() {
 
     document.body.insertAdjacentHTML('beforeend', modalHTML);
     const overlay = document.getElementById('sttModalOverlay');
-    
+
     setTimeout(() => overlay.classList.add('show'), 10);
 
     document.getElementById('sttCancelBtn').onclick = closeSttModal;
@@ -1023,7 +1023,7 @@ function startRecognition() {
     recognition.onstart = () => {
         isRecognizing = true;
         document.querySelector('.mic-button').innerHTML = "🛑";
-        
+
         const headerControls = document.getElementById('sttHeaderControls');
         if (headerControls) {
             headerControls.innerHTML = '<div class="recording-indicator"></div>';
@@ -1037,7 +1037,7 @@ function startRecognition() {
 
         // 재시도 시, 전송 버튼을 원래대로 복구
         const sendBtn = document.getElementById('sttSendBtn');
-        if(sendBtn) {
+        if (sendBtn) {
             sendBtn.textContent = '전송';
             sendBtn.onclick = sendSttMessage;
         }
@@ -1355,7 +1355,7 @@ async function sendFeedbackToServer(feedbackMessage) {
         removeMessage(loadingMessageId);
         if (result && result.data && result.data.message) {
             const botResponse = result.data;
-            
+
             if (botResponse.message && botResponse.message.startsWith('GetUserProfileDetailResponseDto(')) {
                 const dtoEndIndex = botResponse.message.lastIndexOf(')');
                 const dto_string = botResponse.message.substring(0, dtoEndIndex + 1);
@@ -1375,7 +1375,7 @@ async function sendFeedbackToServer(feedbackMessage) {
                 if (messageContent.startsWith('[')) messageContent = messageContent.substring(1);
                 const { intro, plans } = parseTextPlans(messageContent);
                 renderTextPlanCards(intro, plans, false, true);
-                
+
             } else {
                 addMessageToChat('bot', botResponse.message);
             }
@@ -1397,11 +1397,11 @@ function renderTextPlanCards(intro, plans, prepend = false, showFeedback = false
     const chatContent = document.getElementById('chatContent');
     const cardsContainer = document.createElement('div');
     cardsContainer.className = 'message bot';
-    
+
     if (prepend) {
         cardsContainer.classList.add('no-animation');
     }
-    
+
     let introHTML = '';
     // intro 텍스트에 대괄호가 있는지 확인하고 파싱
     if (intro && intro.includes('[') && intro.includes(']')) {
@@ -1427,12 +1427,12 @@ function renderTextPlanCards(intro, plans, prepend = false, showFeedback = false
     cardsHTML += `<div class="plan-cards-container">`;
     plans.forEach(plan => {
 
-        let dataDisplay; 
+        let dataDisplay;
 
         if (plan['제공량'] === '99999 GB') {
             dataDisplay = '무제한';
         } else {
-        
+
             dataDisplay = plan['제공량'] || '정보 없음';
         }
 
@@ -1570,7 +1570,7 @@ function renderDtoPlanCards(intro, plans, prepend = false) {
             <button class="change-plan-btn-main" onclick="movePlanPage()">요금제 보러가기</button>
         </div>
     `;
-    
+
     // --- HTML 구조를 만드는 로직 수정 끝 ---
 
     cardsContainer.innerHTML = cardsHTML;
@@ -1630,7 +1630,7 @@ function parseUserProfileDto(dto_string) {
     const profileData = {};
     // 괄호 안의 내용만 추출
     const content = dto_string.substring(dto_string.indexOf('(') + 1, dto_string.lastIndexOf(')'));
-    
+
     // 쉼표와 공백을 기준으로 각 필드를 분리
     const pairs = content.split(', ');
 
@@ -1695,7 +1695,7 @@ function renderUserProfileCard(profileData, followUpText, isPrepending = false) 
             </div>
         </div>
     `;
-    
+
     // 기존의 환영 메시지 등이 있다면 제거
     const welcomeMessage = chatContent.querySelector('.welcome-message');
     if (welcomeMessage) {
@@ -1707,12 +1707,12 @@ function renderUserProfileCard(profileData, followUpText, isPrepending = false) 
     } else {
         chatContent.insertAdjacentHTML('beforeend', cardHTML); // 맨 아래에 추가
     }
-    
+
     // 후속 질문이 있다면 일반 메시지로 추가
     if (followUpText && !isPrepending) {
         addMessageToChat('bot', followUpText);
     }
-    
+
     if (!isPrepending) {
         smoothScrollToBottom();
     }

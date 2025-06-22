@@ -9,12 +9,9 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body>
-    <!-- Toast 알림 컨테이너 -->
     <div id="toastContainer" class="toast-container"></div>
 
     <div class="dashboard-container">
-        <!-- 사이드바는 sidebar-config.js에서 동적으로 생성 -->
-        
         <main class="main-content">
             <header class="content-header">
                 <div class="header-left">
@@ -29,61 +26,43 @@
                 </div>
             </header>
 
-            <div class="page-content">
-                <!-- 통계 카드 (선택적) -->
-                <div class="stats-card">
-                    <div class="stats-grid">
-                        <div class="stat-item">
-                            <span class="stat-number" id="totalWordsCount">-</span>
-                            <span class="stat-label">전체 금칙어</span>
+            <div class="card table-card">
+                <div class="card-header">
+                    <div style="display: flex; align-items: center; gap: 16px;">
+                        <h3><i class="fas fa-list"></i> 금칙어 목록</h3>
+                        <a href="https://www.visiblego.com/page/admin/forbidden-allow-words" class="btn btn-secondary" id="manageExceptionsBtn" role="button">
+                            <i class="fas fa-shield-alt"></i> 금칙어 예외 관리로 이동
+                        </a>
+                    </div>
+                    <div class="header-controls">
+                        <div class="filter-section">
+                            <div class="radio-group-inline">
+                                <label class="radio-option">
+                                    <input type="radio" name="forbiddenFilter" value="all" checked>
+                                    <span class="radio-custom"></span>
+                                    <span class="radio-text">전체</span>
+                                </label>
+                                <label class="radio-option">
+                                    <input type="radio" name="forbiddenFilter" value="used">
+                                    <span class="radio-custom"></span>
+                                    <span class="radio-text">사용중</span>
+                                </label>
+                                <label class="radio-option">
+                                    <input type="radio" name="forbiddenFilter" value="unused">
+                                    <span class="radio-custom"></span>
+                                    <span class="radio-text">미사용</span>
+                                </label>
+                            </div>
                         </div>
-                        <div class="stat-item">
-                            <span class="stat-number" id="activeWordsCount">-</span>
-                            <span class="stat-label">사용중</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-number" id="inactiveWordsCount">-</span>
-                            <span class="stat-label">미사용</span>
-                        </div>
+                        <button class="btn btn-primary" id="addNewWordBtn">
+                            <i class="fas fa-plus"></i>
+                            신규 등록
+                        </button>
                     </div>
                 </div>
-
-<div class="card table-card">
-    <div class="card-header">
-        <div style="display: flex; align-items: center; gap: 16px;">
-            <h3><i class="fas fa-list"></i> 금칙어 목록</h3>
-<a href="https://www.visiblego.com/page/admin/forbidden-allow-words" class="btn btn-secondary" id="manageExceptionsBtn" role="button">
-                <i class="fas fa-shield-alt"></i> 금칙어 예외 관리로 이동
-</a>
-        </div>
-        <div class="header-controls">
-            <div class="filter-section">
-                <div class="radio-group-inline">
-                    <label class="radio-option">
-                        <input type="radio" name="forbiddenFilter" value="all" checked>
-                        <span class="radio-custom"></span>
-                        <span class="radio-text">전체</span>
-                    </label>
-                    <label class="radio-option">
-                        <input type="radio" name="forbiddenFilter" value="used">
-                        <span class="radio-custom"></span>
-                        <span class="radio-text">사용중</span>
-                    </label>
-                    <label class="radio-option">
-                        <input type="radio" name="forbiddenFilter" value="unused">
-                        <span class="radio-custom"></span>
-                        <span class="radio-text">미사용</span>
-                    </label>
-                </div>
-            </div>
-            <button class="btn btn-primary" id="addNewWordBtn">
-                <i class="fas fa-plus"></i>
-                신규 등록
-            </button>
-        </div>
-    </div>
-    </div>
-                    <div class="card-body">
+                <div class="card-body">
+                    <div class="search-stats-wrapper">
+                        
                         <div class="search-section">
                             <div class="search-input-group">
                                 <input type="text" id="searchInput" class="search-input" placeholder="검색할 금칙어를 입력하세요">
@@ -94,60 +73,73 @@
                             </div>
                         </div>
 
-                        <div class="table-controls">
-                            <div class="bulk-actions">
-                                <button class="btn btn-success btn-sm" id="enableSelectedBtn">
-                                    <i class="fas fa-check"></i>
-                                    선택 항목 사용으로 전환
-                                </button>
-                                <button class="btn btn-warning btn-sm" id="disableSelectedBtn">
-                                    <i class="fas fa-times"></i>
-                                    선택 항목 미사용으로 전환
-                                </button>
-                                <button class="btn btn-danger btn-sm" id="deleteSelectedBtn">
-                                    <i class="fas fa-trash"></i>
-                                    선택 항목 삭제
-                                </button>
+                        <div class="stats-card">
+                            <div class="stats-grid">
+                                <div class="stat-item">
+                                    <span class="stat-number" id="totalWordsCount">-</span>
+                                    <span class="stat-label">전체</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-number" id="activeWordsCount">-</span>
+                                    <span class="stat-label">사용</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-number" id="inactiveWordsCount">-</span>
+                                    <span class="stat-label">미사용</span>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="table-wrapper">
-                            <div class="table-container">
-                                <table class="data-table" id="forbiddenWordsTable">
-                                    <thead>
-                                        <tr>
-                                            <th class="col-checkbox">
-                                                <label class="checkbox-container">
-                                                    <input type="checkbox" id="selectAllCheckbox">
-                                                    <span class="checkmark"></span>
-                                                </label>
-                                            </th>
-                                            <th class="col-number">번호</th>
-                                            <th class="col-word">단어</th>
-                                            <th class="col-status">상태</th>
-                                            <th class="col-actions">액션</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="forbiddenWordsTableBody">
-                                        <!-- 데이터는 JavaScript로 동적 생성 -->
-                                    </tbody>
-                                </table>
-                            </div>
-                            
-                            <!-- 로딩 상태 -->
-                            <div class="loading-overlay" id="loadingOverlay" style="display: none;">
-                                <div class="loading-spinner">
-                                    <div class="spinner"></div>
-                                    <span>데이터를 불러오는 중...</span>
-                                </div>
-                            </div>
+                    </div> <div class="table-controls">
+                        <div class="bulk-actions">
+                            <button class="btn btn-success btn-sm" id="enableSelectedBtn">
+                                <i class="fas fa-check"></i>
+                                선택 항목 사용으로 전환
+                            </button>
+                            <button class="btn btn-warning btn-sm" id="disableSelectedBtn">
+                                <i class="fas fa-times"></i>
+                                선택 항목 미사용으로 전환
+                            </button>
+                            <button class="btn btn-danger btn-sm" id="deleteSelectedBtn">
+                                <i class="fas fa-trash"></i>
+                                선택 항목 삭제
+                            </button>
+                        </div>
+                    </div>
 
-                            <!-- 빈 상태 -->
-                            <div class="empty-state" id="emptyState" style="display: none;">
-                                <i class="fas fa-search"></i>
-                                <h3>검색 결과가 없습니다</h3>
-                                <p>다른 검색어로 시도해보세요</p>
+                    <div class="table-wrapper">
+                        <div class="table-container">
+                            <table class="data-table" id="forbiddenWordsTable">
+                                <thead>
+                                    <tr>
+                                        <th class="col-checkbox">
+                                            <label class="checkbox-container">
+                                                <input type="checkbox" id="selectAllCheckbox">
+                                                <span class="checkmark"></span>
+                                            </label>
+                                        </th>
+                                        <th class="col-number">번호</th>
+                                        <th class="col-word">단어</th>
+                                        <th class="col-status">상태</th>
+                                        <th class="col-actions">액션</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="forbiddenWordsTableBody">
+                                    </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="loading-overlay" id="loadingOverlay" style="display: none;">
+                            <div class="loading-spinner">
+                                <div class="spinner"></div>
+                                <span>데이터를 불러오는 중...</span>
                             </div>
+                        </div>
+
+                        <div class="empty-state" id="emptyState" style="display: none;">
+                            <i class="fas fa-search"></i>
+                            <h3>검색 결과가 없습니다</h3>
+                            <p>다른 검색어로 시도해보세요</p>
                         </div>
                     </div>
                 </div>
@@ -155,7 +147,6 @@
         </main>
     </div>
 
-    <!-- 금칙어 추가 모달 -->
     <div id="addWordModal" class="modal">
         <div class="modal-backdrop"></div>
         <div class="modal-content">
@@ -199,7 +190,6 @@
         </div>
     </div>
 
-    <!-- 스크립트 로드 -->
     <script src="../../../js/admin/common.js"></script>
     <script src="../../../js/admin/sidebar-config.js"></script>
     <script src="../../../js/admin/forbidden-words.js"></script>

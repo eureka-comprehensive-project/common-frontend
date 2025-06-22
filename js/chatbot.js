@@ -624,17 +624,50 @@ function displayWelcomeMessage() {
     updateChatHeader('새로운 대화');
 }
 
+/**
+ * 추천 질문 버튼 클릭 시 호출되는 함수
+ * @param {HTMLElement} buttonElement - 클릭된 버튼 요소
+ */
+function handleSuggestionClick(buttonElement) {
+    const message = buttonElement.innerText.trim();
+    if (!message) return;
+    
+    // [수정] 이 함수에서는 화면에 메시지를 추가하지 않습니다.
+    // addMessageToChat('user', message); // 이 라인을 삭제 또는 주석 처리!
+    
+    // 클릭된 버튼 UI를 화면에서 제거
+    const container = buttonElement.closest('.message.bot');
+    if(container) {
+        container.remove();
+    }
 
-async function sendMessage() {
+    // sendMessage 함수를 호출하여 메시지 전송 및 화면 표시를 위임합니다.
+    sendMessage(message); 
+}
+
+
+async function sendMessage(predefinedMessage = null) {
     const messageInput = document.getElementById('messageInput');
-    const message = messageInput.value.trim();
+    
+    // 버튼으로 메시지가 전달되면 해당 텍스트를, 아니면 입력 필드의 값을 사용
+    const message = predefinedMessage || messageInput.value.trim();
+    
+    // 전송할 메시지가 없으면 함수 종료
     if (!message) return;
-    disableChatInput();
+
+    // 메시지 소스(버튼, 직접입력)에 관계없이 사용자 메시지를 채팅창에 추가
     addMessageToChat('user', message);
+    
+    // 입력창 비활성화 및 초기화
+    disableChatInput();
     messageInput.value = '';
+
+    // "응답 처리 중" 로딩 메시지 표시
     const loadingMessageId = addMessageToChat('bot', '응답을 처리중입니다...');
+
     let isNewChat = false;
     try {
+        // 1. 새 채팅방 생성 (필요시)
         if (!currentChatId) {
             isNewChat = true;
             const createRoomResponse = await fetch('https://www.visiblego.com/gateway/chatbot/create-chat-room', {
@@ -642,7 +675,9 @@ async function sendMessage() {
                 headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json', },
                 body: JSON.stringify({ userId: userId })
             });
+
             if (!createRoomResponse.ok) throw new Error(`채팅방 생성 실패: ${createRoomResponse.status}`);
+            
             const createRoomResult = await createRoomResponse.json();
             if (createRoomResult && createRoomResult.data && createRoomResult.data.chatRoomId) {
                 currentChatId = createRoomResult.data.chatRoomId;
@@ -653,24 +688,28 @@ async function sendMessage() {
                 throw new Error('채팅방 ID를 받아오지 못했습니다.');
             }
         }
+
+        // 2. 챗봇 API로 메시지 전송
         const response = await fetch('https://www.visiblego.com/gateway/chatbot/api/chat', {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json', },
             body: JSON.stringify({ userId: userId, chatRoomId: currentChatId, message: message })
         });
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        const result = await response.json();
-        removeMessage(loadingMessageId);
 
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        
+        const result = await response.json();
+        removeMessage(loadingMessageId); // 로딩 메시지 제거
+
+        // 3. 챗봇 응답 처리
         if (result && result.data) {
             const botResponse = result.data;
 
-            // --- [수정된 부분 시작] ---
+            // 다양한 응답 유형에 따라 적절한 렌더링 함수 호출
             if (botResponse.message && botResponse.message.startsWith('GetUserProfileDetailResponseDto(')) {
                 const dtoEndIndex = botResponse.message.lastIndexOf(')');
                 const dto_string = botResponse.message.substring(0, dtoEndIndex + 1);
                 const followUpText = botResponse.message.substring(dtoEndIndex + 1).trim();
-                
                 const profileData = parseUserProfileDto(dto_string);
                 renderUserProfileCard(profileData, followUpText);
 
@@ -687,6 +726,7 @@ async function sendMessage() {
                 renderTextPlanCards(intro, plans, false, true);
 
             } else {
+                // 일반 텍스트 응답 및 제안 버튼 UI 렌더링 처리
                 addMessageToChat('bot', botResponse.message);
             }
 
@@ -694,43 +734,52 @@ async function sendMessage() {
             addMessageToChat('bot', '응답을 받을 수 없습니다.');
         }
 
+        // 4. 새 채팅인 경우, 좌측 목록에 추가
         if (isNewChat) {
             const chatListContainer = document.getElementById('chatList');
             const noChatsMessage = chatListContainer.querySelector('.no-chats');
             if (noChatsMessage) noChatsMessage.remove();
+            
             document.querySelectorAll('.chat-item.active').forEach(item => item.classList.remove('active'));
+            
             const newChatRoomId = currentChatId;
             const chatItem = document.createElement('div');
             chatItem.className = 'chat-item active';
             chatItem.dataset.chatId = newChatRoomId;
             chatItem.onclick = () => selectChat(newChatRoomId);
+            
             const creationDate = new Date();
             const year = creationDate.getFullYear();
             const month = String(creationDate.getMonth() + 1).padStart(2, '0');
             const day = String(creationDate.getDate()).padStart(2, '0');
             const formattedDate = `${year}/${month}/${day}`;
+            
             chatItem.innerHTML = `<div class="chat-item-content"><span class="chat-item-title">${message}</span><span class="chat-item-date">${formattedDate}</span></div>`;
             chatListContainer.prepend(chatItem);
             updateChatHeader(message);
         }
+
     } catch (error) {
         console.error('메시지 전송 실패:', error);
         removeMessage(loadingMessageId);
         addMessageToChat('bot', '죄송합니다. 오류가 발생했습니다. 다시 시도해주세요.');
         if (isNewChat) {
-            currentChatId = null;
+            currentChatId = null; // 오류 발생 시 새 채팅방 ID 롤백
             updateChatHeader('새로운 대화');
         }
     } finally {
+        // 입력창 다시 활성화
         enableChatInput();
     }
 }
 
-// 채팅에 메시지 추가
+// ===== 기존 addMessageToChat 함수를 아래 코드로 교체 =====
+
 function addMessageToChat(sender, message, timestamp, noAnimation = false) {
     const chatContent = document.getElementById('chatContent');
 
-    if (sender === 'system') {
+    // 시스템 메시지 또는 일반 메시지 추가 시 환영 메시지 제거
+    if (sender === 'system' || !chatContent.querySelector('.welcome-message')) {
         const welcomeMessage = chatContent.querySelector('.welcome-message');
         if (welcomeMessage) {
             welcomeMessage.remove();
@@ -742,6 +791,40 @@ function addMessageToChat(sender, message, timestamp, noAnimation = false) {
             document.getElementById('suggestionContainer').classList.remove('show');
         }
     }
+    
+    // ===== 핵심 수정 부분 시작 =====
+    // 챗봇의 특정 응답을 감지하고 파싱하여 버튼 UI를 렌더링
+    if (sender === 'bot' && message.includes('어떤 도움을 드릴까요?') && message.includes('{') && message.includes('}')) {
+        const messageElement = document.createElement('div');
+        messageElement.className = `message ${sender}`;
+        if (noAnimation) {
+            messageElement.classList.add('no-animation');
+        }
+
+        const mainText = message.substring(0, message.indexOf('{')).trim();
+        const optionsText = message.substring(message.indexOf('{') + 1, message.lastIndexOf('}'));
+        const options = optionsText.split(',').map(item => item.trim());
+
+        let buttonsHTML = '';
+        options.forEach(option => {
+            buttonsHTML += `<button class="suggestion-action-button" onclick="handleSuggestionClick(this)"><span>${option}</span></button>`;
+        });
+
+        messageElement.innerHTML = `
+            <div class="suggestion-card-container">
+                <div class="suggestion-card-title">어떤 도움이 필요하신가요?</div>
+                <div class="suggestion-card-subtitle">아래 항목 중에서 선택하시거나, 직접 질문을 입력해주세요.</div>
+                <div class="suggestion-buttons-list">
+                    ${buttonsHTML}
+                </div>
+            </div>
+        `;
+
+        chatContent.appendChild(messageElement);
+        smoothScrollToBottom();
+        return; // 버튼 UI를 렌더링했으므로 함수 종료
+    }
+    // ===== 핵심 수정 부분 끝 =====
 
     const messageElement = document.createElement('div');
     messageElement.className = `message ${sender}`;

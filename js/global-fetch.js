@@ -56,11 +56,11 @@ window.fetch = async function (url, options = {}) {
         throw new Error(`권한 오류 - statusCode: ${statusCode}`);
       }
 
-      // ✅ 기타 오류 (500 포함)
-      if (statusCode !== 200) {
-        showErrorModal(`요청 실패: ${errorMessage}`, null, false); // 토큰 유지
-        throw new Error(`API 실패 - statusCode: ${statusCode}`);
-      }
+      // // ✅ 기타 오류 (500 포함)
+      // if (statusCode !== 200) {
+      //   showErrorModal(`요청 실패: ${errorMessage}`, null, false); // 토큰 유지
+      //   throw new Error(`API 실패 - statusCode: ${statusCode}`);
+      // }
 
     } catch (e) {
       console.warn("JSON 파싱 실패", e);

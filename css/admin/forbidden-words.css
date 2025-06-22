@@ -103,39 +103,52 @@
     color: #374151;
 }
 
-/* 통계 카드 */
+/* [추가] 검색과 통계를 묶는 래퍼 스타일 */
+.search-stats-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    width: 100%; /* 부모의 정렬을 따르도록 너비 100% */
+    justify-content: center; /* 내부 아이템들을 가운데로 모음 */
+}
+
+/* 통계 카드 (아주 작은 버전) */
 .stats-card {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    flex-shrink: 0;
+    margin: 0;
+    max-width: none;
+    background: linear-gradient(135deg, #33164f 100%);
     color: white;
-    padding: 24px;
-    border-radius: 12px;
-    margin-bottom: 24px;
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    padding: 8px 12px;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
 }
 
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 24px;
+    grid-template-columns: repeat(3, auto);
+    gap: 16px; /* 아이템 간격 */
 }
 
 .stat-item {
-    text-align: center;
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
 }
 
 .stat-number {
-    display: block;
-    font-size: 32px;
+    font-size: 16px;
     font-weight: 700;
-    margin-bottom: 4px;
+    margin-bottom: 0;
     white-space: nowrap;
 }
 
 .stat-label {
-    font-size: 14px;
-    opacity: 0.9;
+    font-size: 11px;
+    opacity: 0.8;
     white-space: nowrap;
 }
+
 
 /* 카드 및 헤더 스타일 */
 .card {
@@ -146,6 +159,16 @@
     overflow: hidden;
     border: 1px solid #e2e8f0;
 }
+
+/* [추가] card-body 스타일 추가 */
+.card-body {
+    padding: 24px; /* 내부 여백 */
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* 자식 요소들을 수평 중앙 정렬 */
+    gap: 24px; /* 자식 요소들(검색그룹, 테이블컨트롤 등)의 수직 간격 */
+}
+
 
 .card-header {
     padding: 24px 32px;
@@ -256,7 +279,7 @@
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, #667eea, #764ba2);
+    background: linear-gradient(135deg, #1a1f35);
     color: white;
 }
 
@@ -318,11 +341,12 @@
 
 /* 검색 섹션 */
 .search-section {
+    /* flex: 1; 삭제 */
     background: #f8fafc;
-    padding: 24px;
+    padding: 12px;
     border-radius: 8px;
     border: 1px solid #e2e8f0;
-    margin-bottom: 24px;
+    margin-bottom: 0;
 }
 
 .search-input-group {
@@ -330,8 +354,8 @@
     border-radius: 8px;
     overflow: hidden;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    max-width: 500px;
-    margin: 0 auto;
+    width: 450px; /* 원하는 너비로 설정 */
+    margin: 0; 
 }
 
 .search-input {
@@ -352,7 +376,7 @@
 
 /* 테이블 컨트롤 */
 .table-controls {
-    margin-bottom: 16px;
+    margin-bottom: 0; /* card-body의 gap으로 간격 제어 */
 }
 
 .bulk-actions {
@@ -366,6 +390,7 @@
 .table-wrapper {
     position: relative;
     width: 100%;
+    max-width: 1200px; /* 테이블이 너무 넓어지지 않게 최대 너비 설정 (선택 사항) */
     overflow-x: auto;
     border-radius: 8px;
     border: 1px solid #e2e8f0;
@@ -373,7 +398,7 @@
 }
 
 .table-container {
-    min-width: 800px; /* 최소 너비 보장 */
+    min-width: 800px; 
     width: 100%;
 }
 
@@ -382,7 +407,7 @@
     width: 100%;
     border-collapse: collapse;
     background: white;
-    table-layout: fixed; /* 고정 레이아웃으로 컬럼 너비 제어 */
+    table-layout: fixed;
 }
 
 /* 컬럼 너비 고정 */
@@ -395,7 +420,7 @@
 }
 
 .col-word {
-    width: 300px; /* 단어 컬럼을 넓게 */
+    width: 300px;
 }
 
 .col-status {
@@ -412,7 +437,7 @@
     text-align: left;
     border-bottom: 1px solid #e2e8f0;
     vertical-align: middle;
-    white-space: nowrap; /* 텍스트 줄바꿈 방지 */
+    white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
@@ -445,7 +470,7 @@
 .word-cell {
     font-weight: 500;
     color: #1f2937;
-    word-break: keep-all; /* 한글 단어 분리 방지 */
+    word-break: keep-all; 
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -566,7 +591,7 @@ input:disabled + .toggle-slider:hover {
 .icon-btn.btn-danger {
     background: #ef4444;
     color: white;
-    margin-left: 16px; /* 삭제 버튼을 토글에서 떄우기 */
+    margin-left: 16px;
 }
 
 .icon-btn.btn-danger:hover {
@@ -841,6 +866,15 @@ input:disabled + .toggle-slider:hover {
 }
 
 @media (max-width: 768px) {
+    .search-stats-wrapper {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .search-input-group {
+        width: 100%; /* 모바일에서는 너비 100% */
+    }
+    
     .toast-container {
         right: 10px;
         left: 10px;
@@ -853,12 +887,20 @@ input:disabled + .toggle-slider:hover {
     }
     
     .stats-grid {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
         gap: 16px;
     }
     
     .stat-number {
         font-size: 24px;
+    }
+
+    .stat-label {
+        font-size: 13px;
+    }
+
+    .stat-item {
+        flex-direction: column;
     }
     
     .card-header {
@@ -893,15 +935,11 @@ input:disabled + .toggle-slider:hover {
     }
     
     .icon-btn {
-        margin-left: 8px; /* 모바일에서는 간격 줄임 */
+        margin-left: 8px;
     }
     
     .search-section {
         padding: 16px;
-    }
-    
-    .search-input-group {
-        max-width: 100%;
     }
     
     .table-wrapper {

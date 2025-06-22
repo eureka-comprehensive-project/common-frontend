@@ -1,4 +1,4 @@
-/* 예외 금칙어 관리 페이지 전용 스타일 */
+/* 금칙어 관리 페이지 전용 스타일 */
 
 /* Toast 알림 시스템 */
 .toast-container {
@@ -103,20 +103,23 @@
     color: #374151;
 }
 
-/* 통계 카드 */
+/* 통계 카드 (너비 제어 버전) */
 .stats-card {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: inline-block; /* 내용물 크기만큼 너비를 차지하도록 변경 */
+
+    /* --- 기존 스타일 --- */
+    background: linear-gradient(135deg,#33164f 100%);
     color: white;
-    padding: 24px;
-    border-radius: 12px;
-    margin-bottom: 24px;
+    padding: 10px;
+    border-radius: 6px;
+    margin-bottom: 12px;
     box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 24px;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); /* 수정 */
+    gap: 12px; /* 수정 */
 }
 
 .stat-item {
@@ -125,14 +128,14 @@
 
 .stat-number {
     display: block;
-    font-size: 32px;
+    font-size: 26px; /* 수정 */
     font-weight: 700;
     margin-bottom: 4px;
     white-space: nowrap;
 }
 
 .stat-label {
-    font-size: 14px;
+    font-size: 13px; /* 수정 */
     opacity: 0.9;
     white-space: nowrap;
 }
@@ -256,7 +259,7 @@
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, #667eea, #764ba2);
+    background: linear-gradient(135deg, #1a1f35);
     color: white;
 }
 

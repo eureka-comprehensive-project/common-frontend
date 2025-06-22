@@ -204,7 +204,7 @@ function generateSidebarHTML() {
             <div class="sidebar-header">
                 <div class="logo">
                     <i class="fas fa-shield-alt"></i>
-                    <span>Admin Panel</span>
+                    <span>요기U+ 관리자</span>
                 </div>
             </div>
             <nav class="sidebar-nav">

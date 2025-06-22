@@ -19,12 +19,12 @@ window.fetch = async function (url, options = {}) {
       const statusCode = json.statusCode;
       const errorMessage = json.data?.message || "에러가 발생했습니다.";
 
-      // ✅ Access Token 만료: 재발급 시도 후 재요청
+      // ✅ Access Token 만료
       if (statusCode === 10001) {
         try {
           const reissueResponse = await fetch("https://www.visiblego.com/auth/reissue", {
             method: "GET",
-            credentials: "include", // refreshToken 쿠키 포함
+            credentials: "include",
           });
           const reissueJson = await reissueResponse.json();
 
@@ -40,27 +40,26 @@ window.fetch = async function (url, options = {}) {
 
             return await originalFetch(url, { ...options, headers: retryHeaders });
           } else {
-            showErrorModal("세션이 만료되었습니다. 다시 로그인해주세요.");
+            showErrorModal("세션이 만료되었습니다. 다시 로그인해주세요.", "/page/login", true);
             throw new Error("Token reissue failed");
           }
         } catch (err) {
           console.error("토큰 재발급 실패:", err);
-          showErrorModal("세션이 만료되었습니다. 다시 로그인해주세요.");
+          showErrorModal("세션이 만료되었습니다. 다시 로그인해주세요.", "/page/login", true);
           throw err;
         }
       }
 
-      // ✅ 10002 ~ 10008 인증/차단 오류 → 로그인 페이지로 이동
+      // ✅ 인증/차단 오류 (10002 ~ 10008)
       if (statusCode >= 10002 && statusCode <= 10008) {
-        showErrorModal("인증 정보가 유효하지 않습니다. 다시 로그인해주세요.");
+        showErrorModal("인증 정보가 유효하지 않습니다. 다시 로그인해주세요.", "/page/login", true);
         throw new Error(`권한 오류 - statusCode: ${statusCode}`);
       }
 
-      // ✅ 기타 에러
+      // ✅ 기타 오류 (500 포함)
       if (statusCode !== 200) {
-        const message = `요청 실패: ${errorMessage}`;
-        showErrorModal(message, null); // 리디렉션 없이 모달만
-        throw new Error(message);
+        showErrorModal(`요청 실패: ${errorMessage}`, null, false); // 토큰 유지
+        throw new Error(`API 실패 - statusCode: ${statusCode}`);
       }
 
     } catch (e) {
@@ -71,8 +70,8 @@ window.fetch = async function (url, options = {}) {
   return response;
 };
 
-// ✅ 자동 생성되는 에러 모달
-function showErrorModal(message, redirectUrl = "/page/login") {
+// ✅ 에러 모달 표시 함수
+function showErrorModal(message, redirectUrl = "/page/login", shouldClearToken = true) {
   if (document.getElementById("errorModal")) return;
 
   const modal = document.createElement("div");
@@ -112,11 +111,13 @@ function showErrorModal(message, redirectUrl = "/page/login") {
   btn.style.cursor = "pointer";
 
   btn.onclick = () => {
-    sessionStorage.removeItem("accessToken");
+    if (shouldClearToken) {
+      sessionStorage.removeItem("accessToken");
+    }
     if (redirectUrl) {
       window.location.href = redirectUrl;
     } else {
-      document.body.removeChild(modal); // 그냥 닫기만
+      document.body.removeChild(modal);
     }
   };
 

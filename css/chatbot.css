@@ -268,6 +268,10 @@ body {
 
 .profile-text {
   flex: 1;
+  min-width: 0;             /* flex 아이템이 내용보다 작아질 수 있도록 허용 */
+  white-space: nowrap;      /* 텍스트 줄바꿈 방지 */
+  overflow: hidden;         /* 넘치는 텍스트 숨기기 */
+  text-overflow: ellipsis;  /* 숨겨진 텍스트를 ...으로 표시 */
 }
 
 /* 프로필 팝업 (plan과 동일) */

@@ -1002,3 +1002,20 @@ input:disabled + .toggle-slider:hover {
         transform: translateX(20px);
     }
 }
+/* --- 기존 CSS 파일 하단에 아래 내용 추가 --- */
+
+/* 커스텀 확인/알림 모달 본문 텍스트 스타일 */
+.modal-body p {
+    margin: 0;
+    font-size: 16px;
+    line-height: 1.6;
+    color: #374151; /* .form-label과 일관성 있는 색상 */
+    word-break: keep-all; /* 한글 단어 깨짐 방지 */
+    text-align: center; /* 메시지 중앙 정렬 */
+}
+
+/* 메시지 내 strong 태그 스타일 (강조용) */
+.modal-body p strong {
+    color: #667eea; /* Primary color */
+    font-weight: 700;
+}

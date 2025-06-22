@@ -6,12 +6,10 @@ window.fetch = async function (url, options = {}) {
   const headers = {
     ...(options.headers || {}),
     "Content-Type": "application/json",
+    ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
   };
 
-  // 1차 요청
   let response = await originalFetch(url, { ...options, headers });
-  console.log(response)
-
   const cloned = response.clone();
   const contentType = cloned.headers.get("content-type");
 
@@ -21,57 +19,50 @@ window.fetch = async function (url, options = {}) {
       const statusCode = json.statusCode;
       const errorMessage = json.data?.message || "에러가 발생했습니다.";
 
-      if (statusCode !== 200) {
-        // ✅ Access Token 만료: 재발급 시도 후 재요청
-        if (statusCode === 10001) {
-          try {
-            const reissueResponse = await fetch("https://www.visiblego.com/auth/reissue", {
-              method: "GET",
-              credentials: "include", // ✅ refreshToken 쿠키 전송
-            });
+      // ✅ Access Token 만료: 재발급 시도 후 재요청
+      if (statusCode === 10001) {
+        try {
+          const reissueResponse = await fetch("https://www.visiblego.com/auth/reissue", {
+            method: "GET",
+            credentials: "include", // refreshToken 쿠키 포함
+          });
+          const reissueJson = await reissueResponse.json();
 
-            const reissueJson = await reissueResponse.json();
+          if (reissueJson.statusCode === 200) {
+            const newAccessToken = reissueJson.data.accessToken;
+            sessionStorage.setItem("accessToken", newAccessToken);
 
-            if (reissueJson.statusCode === 200) {
-              const newAccessToken = reissueJson.data.accessToken;
-              sessionStorage.setItem("accessToken", newAccessToken);
+            const retryHeaders = {
+              ...(options.headers || {}),
+              Authorization: `Bearer ${newAccessToken}`,
+              "Content-Type": "application/json",
+            };
 
-              // ✅ 헤더에 새 토큰으로 교체 후 재요청
-              const retryHeaders = {
-                ...(options.headers || {}),
-                Authorization: `Bearer ${newAccessToken}`,
-                "Content-Type": "application/json",
-              };
-
-              return await originalFetch(url, { ...options, headers: retryHeaders });
-            } else {
-              showErrorModal("세션이 만료되었습니다. 다시 로그인해주세요.");
-              throw new Error("Token reissue failed");
-            }
-          } catch (err) {
-            console.error("토큰 재발급 실패:", err);
+            return await originalFetch(url, { ...options, headers: retryHeaders });
+          } else {
             showErrorModal("세션이 만료되었습니다. 다시 로그인해주세요.");
-            throw err;
+            throw new Error("Token reissue failed");
           }
+        } catch (err) {
+          console.error("토큰 재발급 실패:", err);
+          showErrorModal("세션이 만료되었습니다. 다시 로그인해주세요.");
+          throw err;
         }
-
-        // ✅ 블랙리스트 또는 기타 오류
-        let message = "오류가 발생했습니다.";
-        switch (statusCode) {
-          case 10004:
-            message = "로그인이 필요합니다.";
-            break;
-          case 10007:
-          case 10008:
-            message = "차단된 사용자입니다. 관리자에게 문의해주세요.";
-            break;
-          default:
-            message = `요청 실패: ${errorMessage}`;
-        }
-
-        showErrorModal(message);
-        throw new Error(`API 실패 - statusCode: ${statusCode}`);
       }
+
+      // ✅ 10002 ~ 10008 인증/차단 오류 → 로그인 페이지로 이동
+      if (statusCode >= 10002 && statusCode <= 10008) {
+        showErrorModal("인증 정보가 유효하지 않습니다. 다시 로그인해주세요.");
+        throw new Error(`권한 오류 - statusCode: ${statusCode}`);
+      }
+
+      // ✅ 기타 에러
+      if (statusCode !== 200) {
+        const message = `요청 실패: ${errorMessage}`;
+        showErrorModal(message, null); // 리디렉션 없이 모달만
+        throw new Error(message);
+      }
+
     } catch (e) {
       console.warn("JSON 파싱 실패", e);
     }
@@ -122,7 +113,11 @@ function showErrorModal(message, redirectUrl = "/page/login") {
 
   btn.onclick = () => {
     sessionStorage.removeItem("accessToken");
-    window.location.href = redirectUrl;
+    if (redirectUrl) {
+      window.location.href = redirectUrl;
+    } else {
+      document.body.removeChild(modal); // 그냥 닫기만
+    }
   };
 
   box.appendChild(msg);
